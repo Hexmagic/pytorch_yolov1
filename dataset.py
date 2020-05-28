@@ -24,6 +24,11 @@ class VOCDataset(Dataset):
                 ToTensor(),
                 RandomErasing(),
             ])
+        else:
+            self.transform = Compose([
+                ToPILImage(),
+                ToTensor()
+            ])
         with open(f'data/{self.mode}.txt', 'r') as f:
             lines = f.readlines()
             self.lines = []
@@ -53,7 +58,7 @@ class VOCDataset(Dataset):
         np_target = np.zeros(self.target_shape)
         np_class = np.zeros((len(boxes), self.C))
         for i in range(len(labels)):
-            np_class[i][labels[i]] = 1
+            np_class[i][labels[i]-1] = 1
         step = 1 / self.S
         for i in range(len(boxes)):
             box = boxes[i]
@@ -88,7 +93,7 @@ class VOCDataset(Dataset):
 
 if __name__ == "__main__":
     data = VOCDataset('train')
-    loader = DataLoader(data)
+    loader = DataLoader(data,batch_size=2)
     for ele in loader:
         print(ele[0].shape)
         break
