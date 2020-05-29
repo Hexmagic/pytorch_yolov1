@@ -36,16 +36,16 @@ def train():
 							  drop_last=True,
 							  shuffle=True)
 	#net = yolo().cuda()
-	net = torch.load('weights/99_net.pk')
+	net = torch.load('weights/35_net.pk')
 	criterion = Loss().cuda()
 	optim = SGD(params=net.parameters(),
-				lr=0.0001,weight_decay=5e-4,momentum=0.9)
+				lr=0.0001,weight_decay=5e-4,momentum=0.8)
 	for epoch in range(100):
 		bar = tqdm(train_loader, dynamic_ncols=True)
 		batch_loss = []
 		bar.set_description_str(f"epoch/{epoch}")
 		for i, ele in enumerate(bar):
-			#update_lr(optim, epoch, float(i) / float(len(train_loader) - 1))
+			update_lr(optim, epoch, float(i) / float(len(train_loader) - 1))
 			img, target = ele
 			img, target = Variable(img).cuda(), Variable(target).cuda()
 			output = net(img)
