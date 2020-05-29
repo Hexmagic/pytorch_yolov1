@@ -84,7 +84,7 @@ class YoLo(nn.Module):
 		super(YoLo, self).__init__()
 		self.features = features
 		self.classify = nn.Sequential(nn.Linear(512 * 7 * 7, 4096),
-									  nn.ReLU(True), nn.Dropout(0.3),
+									  nn.LeakyReLU(True), nn.Dropout(0.3),
 									  nn.Linear(4096, 1470))
 		for m in self.modules():
 			if isinstance(m, nn.Conv2d):
