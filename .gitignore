@@ -3,3 +3,4 @@ data/
 .vscode
 __pycache__
 weights
+output

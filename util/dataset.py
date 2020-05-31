@@ -1,5 +1,4 @@
 from torch.utils.data import Dataset, DataLoader
-import config
 import cv2
 import numpy as np
 import math
@@ -8,9 +7,17 @@ from torchvision.transforms import Compose, RandomErasing, ColorJitter, ToTensor
 
 
 class VOCDataset(Dataset):
-    def __init__(self, mode='train', B=2, C=20, S=7, *args, **kwargs):
+    def __init__(self,
+                 mode='train',
+                 rt_name=False,
+                 B=2,
+                 C=20,
+                 S=7,
+                 *args,
+                 **kwargs):
         super(VOCDataset, self).__init__(*args, **kwargs)
         self.mode = mode
+        self.rt_name = rt_name
         self.B = B
         self.C = C
         self.S = S
@@ -20,7 +27,7 @@ class VOCDataset(Dataset):
         if mode == 'train':
             self.transform = Compose([
                 ToPILImage(),
-                ColorJitter(brightness=0.5, contrast=0.2),
+                ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
                 ToTensor(),
                 RandomErasing(),
             ])
@@ -39,8 +46,8 @@ class VOCDataset(Dataset):
                 self.lines.append(line)
                 self.labels[line] = arr.reshape(-1, 5)
 
-        self.width = config.width
-        self.height = config.height
+        self.width = 448
+        self.height = 448
 
     def __len__(self):
         return len(self.labels.keys())
@@ -68,8 +75,8 @@ class VOCDataset(Dataset):
             cy = cy % step / step
             box = [cx, cy, w, h]
             np_target[bx][by][:4] = box
-            np_target[bx][by][4:8] = box
-            np_target[bx][by][8] = 1
+            np_target[bx][by][4] = 1
+            np_target[bx][by][5:9] = box
             np_target[bx][by][9] = 1
             np_target[bx][by][10:] = label
         return np_target
@@ -85,6 +92,8 @@ class VOCDataset(Dataset):
         labels = self.labels[line][:, 0].astype(np.uint8)
         boxes = self.labels[line][:, 1:]
         target = self.make_target(labels, boxes)
+        if self.rt_name:
+            return img, target, line
         return img, target
 
 
