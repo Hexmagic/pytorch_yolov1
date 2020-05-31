@@ -77,7 +77,6 @@ class VGG(nn.Module):
         x = self.classifier(x)
         return x
 
-
 class YoLo(nn.Module):
     def __init__(self, features, num_classes=20):
         super(YoLo, self).__init__()
