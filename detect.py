@@ -13,22 +13,33 @@ from util.dataset import VOCDataset
 
 class Detector(object):
     def __init__(self):
-        self.test_loader = DataLoader(VOCDataset(mode='train', rt_name=True),
-                                      shuffle=True,
+        self.color_map = [[128, 0, 0], [0, 128, 0], [128, 128, 0], [0, 0, 128],
+                          [128, 0, 128], [0, 128, 128], [128, 128, 128],
+                          [64, 0, 0], [192, 0, 0], [64, 128, 0], [192, 128, 0],
+                          [64, 0, 128], [192, 0, 128], [64, 128, 128],
+                          [192, 128, 128], [0, 64, 0], [128, 64, 0],
+                          [0, 192, 0], [128, 192, 0], [0, 64, 128], [0, 64, 128]]
+        self.name_map = [
+            'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car',
+            'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
+            'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
+        ]
+        self.test_loader = DataLoader(VOCDataset(mode='val', rt_name=True),
+                                      shuffle=False,
                                       num_workers=1,
                                       drop_last=True,
-                                      batch_size=1)
-        self.model = torch.load('weights/70_net.pk')
+                                      batch_size=2)
+        self.model = torch.load('weights/15_net.pk')
         self.S = 7
         if not os.path.exists('output'):
             os.mkdir('output')
 
     def conver_box(self, box, index):
         x, y, w, h = box
-        i, j = index
+        c, r = index
         step = 1 / self.S
-        x = (x + j) * step
-        y = (y + i) * step
+        x = (x + c) * step
+        y = (y + r) * step
         # x, y, w, h = x.item(), y.item(), w.item(), h.item()
         a, b, c, d = [x - w / 2, y - h / 2, x + w / 2, y + h / 2]
         return [
@@ -43,23 +54,33 @@ class Detector(object):
         img = cv2.imread(name)
         h, w, _ = img.shape
         img = cv2.resize(img, (448, 448))
-        mask = (pred[:, :, 4] > 0.2) | (pred[:, :, 9] > 0.2)
+        pred = pred.reshape((-1, 30))
+        mask = pred[:, 4] > 0.1
         indexs = np.argwhere(mask == True).T
-        print(indexs)
+        #print(indexs)
         for index in indexs:
-            a, b = index
-            cell = pred[a][b]
-            #pred_class = torch.argmax(cell[10:])
+            #b, a = index
+            c = index % 7 
+            r = index//7
+            cell = pred[index][0]  #[b]
+            
+            pred_class = torch.argmax(cell[10:])
+            cls_name = self.name_map[pred_class.item()]
+            color = self.color_map[pred_class.item()]
             if cell[4] > cell[9]:
                 box = cell[:4]
                 score = cell[4]
             else:
                 box = cell[5:9]
                 score = cell[9]
-            rect = self.conver_box(box, [a, b])
+            # if score.item() < 0.1:
+            #     continue
+            rect = self.conver_box(box, [c,r])
             rect = list(map(lambda x: int(448 * x), rect))
-            cv2.rectangle(img, tuple(rect[:2]), tuple(rect[2:]),
-                          (255, 123, 255), 1)
+            cv2.putText(img, '{}:{:.2f}'.format(cls_name,score.item()), tuple(rect[:2]), cv2.FONT_HERSHEY_SIMPLEX,
+                        1, (255, 2, 223), 1)
+            cv2.rectangle(img, tuple(rect[:2]), tuple(rect[2:]), tuple(color),
+                          1)
         img = cv2.resize(img, (h, w))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = Image.fromarray(img)

@@ -3,7 +3,7 @@ import pickle
 import os
 from os import listdir, getcwd
 from os.path import join
-sets = ['train', 'test', 'val']
+sets = ['train', 'val']
 classes = [
     'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat',
     'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person',

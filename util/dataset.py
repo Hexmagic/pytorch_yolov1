@@ -65,7 +65,7 @@ class VOCDataset(Dataset):
         np_target = np.zeros(self.target_shape)
         np_class = np.zeros((len(boxes), self.C))
         for i in range(len(labels)):
-            np_class[i][labels[i]-1] = 1
+            np_class[i][labels[i]] = 1
         step = 1 / self.S
         for i in range(len(boxes)):
             box = boxes[i]
@@ -77,11 +77,11 @@ class VOCDataset(Dataset):
             cx = cx % step / step
             cy = cy % step / step
             box = [cx, cy, w, h]
-            np_target[bx][by][:4] = box
-            np_target[bx][by][4] = 1
-            np_target[bx][by][5:9] = box
-            np_target[bx][by][9] = 1
-            np_target[bx][by][10:] = label
+            np_target[by][bx][:4] = box
+            np_target[by][bx][4] = 1
+            np_target[by][bx][5:9] = box
+            np_target[by][bx][9] = 1
+            np_target[by][bx][10:] = label
         return np_target
 
     def __getitem__(self, idx: int):

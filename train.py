@@ -13,12 +13,16 @@ from visdom import Visdom
 
 def update_lr(optimizer, epoch):
     if epoch == 5:
-        lr = 0.0007
+        lr = 0.0009
     elif epoch == 15:
         lr = 0.0006
+    elif epoch == 35:
+        lr = 0.001
+    elif epoch == 45:
+        lr = 0.0007
+    elif epoch == 60:
+        lr = 0.0005
     elif epoch == 75:
-        lr = 0.0003
-    elif epoch == 105:
         lr = 0.0001
     else:
         return
@@ -33,23 +37,25 @@ def train():
                               batch_size=24,
                               num_workers=4,
                               drop_last=True,
+                              pin_memory=True,
                               shuffle=True)
     valid_loader = DataLoader(VOCDataset(mode='val'),
                               batch_size=4,
-                              num_workers=4,
+                              num_workers=8,
                               drop_last=True,
                               shuffle=True)
     net = yolo().cuda()
+    #net = torch.load('weights/95_net.pk')
     criterion = YoloLoss().cuda()
     optim = SGD(params=net.parameters(),
                 lr=0.001,
-                weight_decay=5e-4,
-                momentum=0.9)
+                weight_decay=2e-4,
+                momentum=0.8)
     optim = Adam(params=net.parameters())
     train_loss = []
     valid_loss = []
 
-    for epoch in range(136):
+    for epoch in range(0, 80):
         train_bar = tqdm(train_loader, dynamic_ncols=True)
         val_bar = tqdm(valid_loader, dynamic_ncols=True)
         train_bar.set_description_str(f"epoch/{epoch}")
@@ -64,7 +70,7 @@ def train():
             loss.backward()
             train_loss.append(loss.item())
             optim.step()
-            if i % 5 == 0:
+            if i % 50 == 0:
                 train_bar.set_postfix_str(f"loss {np.mean(train_loss)}")
                 dom.line(train_loss, win='train_loss')
         if epoch % 5 == 0:
@@ -76,7 +82,7 @@ def train():
             output = net(img)
             loss = criterion(output, target.float())
             valid_loss.append(loss.item())
-            if i % 5 == 0:
+            if i % 100 == 0:
                 val_bar.set_postfix_str(f"loss {np.mean(valid_loss)}")
                 dom.line(valid_loss, win='valid_loss', opts=dict())
 
