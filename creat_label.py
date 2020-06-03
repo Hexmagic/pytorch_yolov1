@@ -3,7 +3,7 @@ import pickle
 import os
 from os import listdir, getcwd
 from os.path import join
-sets = ['train', 'test', 'val']
+sets = ['train', 'val']
 classes = [
     'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat',
     'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person',
@@ -26,8 +26,8 @@ def convert(size, box):
 
 
 def convert_annotation(image_id):
-    in_file = open('data/Annotations/%s.xml' % (image_id))
-    out_file = open('data/labels/%s.txt' % (image_id), 'w')
+    in_file = open('VOC2007/Annotations/%s.xml' % (image_id))
+    out_file = open('VOC2007/labels/%s.txt' % (image_id), 'w')
     tree = ET.parse(in_file)
     root = tree.getroot()
     size = root.find('size')
@@ -50,12 +50,12 @@ def convert_annotation(image_id):
 wd = getcwd()
 print(wd)
 for image_set in sets:
-    if not os.path.exists('data/labels/'):
-        os.makedirs('data/labels/')
-    image_ids = open('data/ImageSets/Main/%s.txt' %
+    if not os.path.exists('VOC2007/labels/'):
+        os.makedirs('VOC2007/labels/')
+    image_ids = open('VOC2007/ImageSets/Main/%s.txt' %
                      (image_set)).read().strip().split()
-    list_file = open('data/%s.txt' % (image_set), 'w')
+    list_file = open('VOC2007/%s.txt' % (image_set), 'w')
     for image_id in image_ids:
-        list_file.write('data/images/%s.jpg\n' % (image_id))
+        list_file.write('VOC2007/images/%s.jpg\n' % (image_id))
         convert_annotation(image_id)
     list_file.close()
