@@ -29,7 +29,7 @@ class Detector(object):
                                       num_workers=1,
                                       drop_last=True,
                                       batch_size=2)
-        self.model = torch.load('weights/15_net.pk')
+        self.model = torch.load('weights/79_net.pk')
         self.S = 7
         if not os.path.exists('output'):
             os.mkdir('output')

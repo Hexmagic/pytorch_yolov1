@@ -2,24 +2,24 @@ from tqdm import tqdm
 import torch
 from torch.optim import AdamW, SGD, Adam
 from torch.utils.data import DataLoader
+from util.dataset import VOCDataset
+from util.loss import YoloLoss
+from model import yolo
 from torch.autograd import Variable
 import numpy as np
 import math
-#from visdom import Visdom
+
+from visdom import Visdom
 
 
 def update_lr(optimizer, epoch):
-    if epoch == 5:
-        lr = 0.0009
-    elif epoch == 15:
-        lr = 0.0006
-    elif epoch == 35:
-        lr = 0.0005
-    elif epoch == 45:
+    if epoch == 10:
         lr = 0.0007
-    elif epoch == 60:
+    elif epoch == 25:
+        lr = 0.0006
+    elif epoch == 50:
         lr = 0.0005
-    elif epoch == 75:
+    elif epoch == 60:
         lr = 0.0001
     else:
         return
@@ -29,7 +29,7 @@ def update_lr(optimizer, epoch):
 
 
 def train():
-    #dom = Visdom()
+    dom = Visdom()
     train_loader = DataLoader(VOCDataset(mode='train'),
                               batch_size=32,
                               num_workers=8,
@@ -51,7 +51,8 @@ def train():
     #optim = Adam(params=net.parameters())
     t_obj_loss,t_nobj_loss,t_xy_loss,t_wh_loss,t_class_loss=[],[],[],[],[]
     v_obj_loss,v_nobj_loss,v_xy_loss,v_wh_loss,v_class_loss=[],[],[],[],[]
-    #valid_loss = []
+    valid_loss = []
+    train_loss = []
 
     for epoch in range(0, 80):
         train_bar = tqdm(train_loader, dynamic_ncols=True)
@@ -66,9 +67,9 @@ def train():
             optim.zero_grad()
             obj_loss, noobj_loss, xy_loss, wh_loss, class_loss = criterion(
                 output, target.float())
-            loss = obj_loss + noobj_loss + xy_loss + wh_loss + class_loss
+            loss = obj_loss + noobj_loss + xy_loss + wh_loss + 2 * class_loss
             loss.backward()
-            #train_loss.append(loss.item())
+            train_loss.append(loss.item())
             t_obj_loss.append(obj_loss.item())
             t_nobj_loss.append(noobj_loss.item())
             t_xy_loss.append(xy_loss.item())
@@ -83,10 +84,15 @@ def train():
                     ]
                 ]
                 train_bar.set_postfix_str(
-                    "o:{:.2f} n:{:.2f} x:{:.2f} w:{:.2f}c:{:.2f}".format(
+                    "o:{:.2f} n:{:.2f} x:{:.2f} w:{:.2f} c:{:.2f}".format(
                         *loss_list))
                 #train_bar.set_postfix_str(f"loss {np.mean(train_loss)}")
-                #dom.line(train_loss, win='train_loss')
+                dom.line(train_loss, win='train', opts={'title': 'Train loss'})
+                dom.line(t_obj_loss, win='obj', opts={'title': 'obj'})
+                dom.line(t_nobj_loss, win='noobj', opts={'title': 'noobj'})
+                dom.line(t_xy_loss, win='xy', opts={'title': 'xy'})
+                dom.line(t_wh_loss, win='wh', opts={'title': 'wh'})
+                dom.line(t_class_loss, win='class', opts={'title': 'class'})
         if epoch % 5 == 0:
             torch.save(net, f'weights/{epoch}_net.pk')
         net.eval()
@@ -102,6 +108,8 @@ def train():
                 v_xy_loss.append(xy_loss.item())
                 v_wh_loss.append(wh_loss.item())
                 v_class_loss.append(class_loss.item())
+                loss = obj_loss + noobj_loss + xy_loss + wh_loss + class_loss
+                valid_loss.append(loss.item())
                 if i % 10 == 0:
                     loss_list = [
                         np.mean(x) for x in [
@@ -112,7 +120,9 @@ def train():
                     val_bar.set_postfix_str(
                         "o:{:.2f} n:{:.2f} x:{:.2f} w:{:.2f}c:{:.2f}".format(
                             *loss_list))
-                    #dom.line(valid_loss, win='valid_loss', opts=dict())
+                    dom.line(valid_loss,
+                             win='valid_loss',
+                             opts=dict(title="Valid loss"))
 
     torch.save(net, f'weights/{epoch}_net.pk')
 

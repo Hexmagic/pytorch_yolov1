@@ -53,7 +53,7 @@ class VOCDataset(Dataset):
         self.height = 448
 
     def __len__(self):
-        return len(self.labels.keys())
+        return len(self.labels.keys()) if self.mode=='train' else 200
 
     def make_target(self, labels, boxes):
         '''
@@ -91,7 +91,7 @@ class VOCDataset(Dataset):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         #img = img.transpose(2, 0, 1)
         if self.transform:
-            img = self.transform(img)
+            img = self.transform(img)/255
         labels = self.labels[line][:, 0].astype(np.uint8)
         boxes = self.labels[line][:, 1:]
         target = self.make_target(labels, boxes)
