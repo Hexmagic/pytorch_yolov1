@@ -35,9 +35,13 @@ def make_layers(cfg, batch_norm=False):
                                stride=s,
                                padding=1)
             if batch_norm:
-                layers += [conv2d, nn.BatchNorm2d(v), nn.ReLU(inplace=True)]
+                layers += [
+                    conv2d,
+                    nn.BatchNorm2d(v),
+                    nn.LeakyReLU(inplace=True)
+                ]
             else:
-                layers += [conv2d, nn.ReLU(inplace=True)]
+                layers += [conv2d, nn.LeakyReLU(inplace=True)]
             in_channels = v
     return nn.Sequential(*layers)
 
@@ -57,18 +61,17 @@ class VGG(nn.Module):
             nn.Linear(4096, 1000),
         )
 
-        # for m in self.modules():
-        #     if isinstance(m, nn.Conv2d):
-        #         nn.init.kaiming_normal_(m.weight,
-        #                                 mode='fan_out')
-        #         if m.bias is not None:
-        #             nn.init.constant_(m.bias, 0)
-        #     elif isinstance(m, nn.BatchNorm2d):
-        #         nn.init.constant_(m.weight, 1)
-        #         nn.init.constant_(m.bias, 0)
-        #     elif isinstance(m, nn.Linear):
-        #         nn.init.normal_(m.weight, 0, 0.01)
-        #         nn.init.constant_(m.bias, 0)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         x = self.features(x)
@@ -77,25 +80,25 @@ class VGG(nn.Module):
         x = self.classifier(x)
         return x
 
+
 class YoLo(nn.Module):
     def __init__(self, features, num_classes=20):
         super(YoLo, self).__init__()
         self.features = features
         self.classify = nn.Sequential(nn.Linear(512 * 7 * 7, 4096),
-                                      nn.LeakyReLU(0.1,True), nn.Dropout(),
+                                      nn.LeakyReLU(0.1, True), nn.Dropout(),
                                       nn.Linear(4096, 1470))
-        # for m in self.modules():
-        #     if isinstance(m, nn.Conv2d):
-        #         nn.init.kaiming_normal_(m.weight,
-        #                                 mode='fan_out')
-        #         if m.bias is not None:
-        #             nn.init.constant_(m.bias, 0)
-        #     elif isinstance(m, nn.BatchNorm2d):
-        #         nn.init.constant_(m.weight, 1)
-        #         nn.init.constant_(m.bias, 0)
-        #     elif isinstance(m, nn.Linear):
-        #         nn.init.normal_(m.weight, 0, 0.01)
-        #         nn.init.constant_(m.bias, 0)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out')
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
 
     def forward(self, x):
         x = self.features(x)
@@ -107,7 +110,7 @@ class YoLo(nn.Module):
 
 def yolo():
     vgg = VGG(make_layers(cfg['D'], batch_norm=True))
-    vgg.load_state_dict(torch.load('weights/vgg16_bn-6c64b313.pth'))
+    #vgg.load_state_dict(torch.load('weights/vgg16_bn-6c64b313.pth'))
     net = YoLo(vgg.features)
     return net
 
