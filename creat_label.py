@@ -9,6 +9,7 @@ classes = [
     'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person',
     'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
 ]
+dic = 'data'
 
 
 def convert(size, box):
@@ -26,8 +27,8 @@ def convert(size, box):
 
 
 def convert_annotation(image_id):
-    in_file = open('VOC2007/Annotations/%s.xml' % (image_id))
-    out_file = open('VOC2007/labels/%s.txt' % (image_id), 'w')
+    in_file = open(f'{dic}/Annotations/%s.xml' % (image_id))
+    out_file = open(f'{dic}/labels/%s.txt' % (image_id), 'w')
     tree = ET.parse(in_file)
     root = tree.getroot()
     size = root.find('size')
@@ -47,15 +48,37 @@ def convert_annotation(image_id):
             str(cls_id) + " " + " ".join([str(a) for a in bb]) + '\n')
 
 
-wd = getcwd()
-print(wd)
-for image_set in sets:
-    if not os.path.exists('VOC2007/labels/'):
-        os.makedirs('VOC2007/labels/')
-    image_ids = open('VOC2007/ImageSets/Main/%s.txt' %
-                     (image_set)).read().strip().split()
-    list_file = open('VOC2007/%s.txt' % (image_set), 'w')
-    for image_id in image_ids:
-        list_file.write('VOC2007/images/%s.jpg\n' % (image_id))
-        convert_annotation(image_id)
-    list_file.close()
+def split_train_val():
+    dirs = os.listdir(f'{dic}/JPEGImages')
+    length = len(dirs)
+    pos = int(0.8 * length)
+    return dirs[:pos], dirs[pos:]
+
+
+def write_to_main(nameList, filename):
+    with open(f'{dic}/ImageSets/Main/{filename}', 'w') as f:
+        for name in nameList:
+            f.write(name.replace('.jpg', '') + '\n')
+
+
+def main():
+    wd = getcwd()
+    print(wd)
+    train, val = split_train_val()
+    write_to_main(train, 'train.txt')
+    write_to_main(val, 'val.txt')
+    print(f"write Tain {len(train)} Val Text {len(val)}")
+    for image_set in sets:
+        if not os.path.exists(f'{dic}/labels/'):
+            os.makedirs(f'{dic}/labels/')
+        image_ids = open(f'{dic}/ImageSets/Main/%s.txt' %
+                         (image_set)).read().strip().split()
+        list_file = open(f'{dic}/%s.txt' % (image_set), 'w')
+        for image_id in image_ids:
+            list_file.write(f'{dic}/JPEGImages/%s.jpg\n' % (image_id))
+            convert_annotation(image_id)
+        list_file.close()
+
+
+if __name__ == '__main__':
+    main()

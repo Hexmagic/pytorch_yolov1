@@ -27,21 +27,18 @@ class VOCDataset(Dataset):
         if mode == 'train':
             self.transform = Compose([
                 ToPILImage(),
-                ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
+                ColorJitter(brightness=0.2, contrast=0.1, hue=0.1),
                 ToTensor(),
-                RandomErasing(),
+                RandomErasing(p=0.2, scale=(0.02, 0.15)),
             ])
         else:
-            self.transform = Compose([
-                ToPILImage(),
-                ToTensor()
-            ])
+            self.transform = Compose([ToPILImage(), ToTensor()])
         with open(f'data/{self.mode}.txt', 'r') as f:
             lines = f.readlines()
             self.lines = []
             for line in lines:
                 line = line.strip()
-                label_line = line.replace('images',
+                label_line = line.replace('JPEGImages',
                                           'labels').replace('.jpg', '.txt')
                 arr = np.loadtxt(label_line)
                 if arr.size == 0:
@@ -53,7 +50,7 @@ class VOCDataset(Dataset):
         self.height = 448
 
     def __len__(self):
-        return len(self.labels.keys()) if self.mode=='train' else 200
+        return len(self.labels.keys()) if self.mode == 'train' else 200
 
     def make_target(self, labels, boxes):
         '''
@@ -91,7 +88,7 @@ class VOCDataset(Dataset):
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         #img = img.transpose(2, 0, 1)
         if self.transform:
-            img = self.transform(img)/255
+            img = self.transform(img) / 255
         labels = self.labels[line][:, 0].astype(np.uint8)
         boxes = self.labels[line][:, 1:]
         target = self.make_target(labels, boxes)
@@ -102,7 +99,7 @@ class VOCDataset(Dataset):
 
 if __name__ == "__main__":
     data = VOCDataset('train')
-    loader = DataLoader(data,batch_size=2)
+    loader = DataLoader(data, batch_size=2)
     for ele in loader:
         print(ele[0].shape)
         break
