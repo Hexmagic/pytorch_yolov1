@@ -2,7 +2,8 @@
 
 ## 训练
 1. 下载voc2007到data文件夹下，目录结构如下
-'''
+
+```sh
 ├─Annotations
 ├─ImageSets
 │  ├─Action
@@ -13,6 +14,7 @@
 ├─labels
 ├─SegmentationClass
 └─SegmentationObject
+```
 2. 使用`voc_label`生成标签
 3. 下载`vgg16_bn-6c64b313.pth`到`weights`文件夹下,这个可以百度一下就能找到
 4. `python train.py` 开始训练
