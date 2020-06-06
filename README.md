@@ -1,7 +1,23 @@
 
 
-> 参考 [X-猪<机器爱学习>YOLO v1深入理解](https://zhuanlan.zhihu.com/p/46691043)
+## 训练
+1. 下载voc2007到data文件夹下，目录结构如下
+'''
+├─Annotations
+├─ImageSets
+│  ├─Action
+│  ├─Layout
+│  ├─Main
+│  └─Segmentation
+├─JPEGImages
+├─labels
+├─SegmentationClass
+└─SegmentationObject
+2. 使用`voc_label`生成标签
+3. 下载`vgg16_bn-6c64b313.pth`到`weights`文件夹下,这个可以百度一下就能找到
+4. `python train.py` 开始训练
 
+'''
 ## 物体探测(Object Detection)
 物体探测的目标是输入一张图片，要求输出图像中包含的对象类别和位置
   ![](https://upload-images.jianshu.io/upload_images/2709767-60e9f5a4dbdd8b4d.png?imageMogr2/auto-orient/strip|imageView2/2/w/1200/format/webp)
