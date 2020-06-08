@@ -13,14 +13,16 @@ from visdom import Visdom
 
 
 def update_lr(optimizer, epoch):
-    if epoch == 10:
-        lr = 0.0007
-    elif epoch == 25:
-        lr = 0.0006
+    if epoch == 30:
+        lr = 0.001
     elif epoch == 50:
-        lr = 0.0005
-    elif epoch == 60:
-        lr = 0.0001
+        lr = 0.0007
+    elif epoch == 71:
+        lr = 0.0006
+    elif epoch >= 90:
+        lr = 0.0007
+    elif epoch > 110:
+        lr = 0.00005
     else:
         return
 
@@ -42,19 +44,20 @@ def train():
                               drop_last=True,
                               shuffle=True)
     net = yolo().cuda()
-    #net = torch.load('weights/95_net.pk')
+    net = torch.load('weights/75_net.pk')
     criterion = YoloLoss().cuda()
     optim = SGD(params=net.parameters(),
-                lr=0.001,
+                lr=0.01,
                 weight_decay=5e-4,
-                momentum=0.9)
-    #optim = Adam(params=net.parameters())
+                momentum=0.9,
+                nesterov=True)
+    #optim = Adam(params=net.parameters(), lr=1e-3, weight_decay=5e-4, eps=1e-4)
     t_obj_loss,t_nobj_loss,t_xy_loss,t_wh_loss,t_class_loss=[],[],[],[],[]
     v_obj_loss,v_nobj_loss,v_xy_loss,v_wh_loss,v_class_loss=[],[],[],[],[]
     valid_loss = []
     train_loss = []
 
-    for epoch in range(0, 80):
+    for epoch in range(90, 120):
         train_bar = tqdm(train_loader, dynamic_ncols=True)
         val_bar = tqdm(valid_loader, dynamic_ncols=True)
         train_bar.set_description_str(f"epoch/{epoch}")

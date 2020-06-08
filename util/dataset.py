@@ -39,7 +39,8 @@ class VOCDataset(Dataset):
             self.lines = []
             for line in lines:
                 line = line.strip()
-                label_line = line.replace("images", "labels").replace(".jpg", ".txt")
+                label_line = line.replace('JPEGImages',
+                                          'labels').replace('.jpg', '.txt')
                 arr = np.loadtxt(label_line)
                 if arr.size == 0:
                     continue
