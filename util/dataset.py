@@ -3,18 +3,18 @@ import cv2
 import numpy as np
 import math
 import torch
-from torchvision.transforms import Compose, RandomErasing, ColorJitter, ToTensor, ToPILImage, RandomErasing
+from torchvision.transforms import (
+    Compose,
+    RandomErasing,
+    ColorJitter,
+    ToTensor,
+    ToPILImage,
+    RandomErasing,
+)
 
 
 class VOCDataset(Dataset):
-    def __init__(self,
-                 mode='train',
-                 rt_name=False,
-                 B=2,
-                 C=20,
-                 S=7,
-                 *args,
-                 **kwargs):
+    def __init__(self, mode="train", rt_name=False, B=2, C=20, S=7, *args, **kwargs):
         super(VOCDataset, self).__init__(*args, **kwargs)
         self.mode = mode
         self.rt_name = rt_name
@@ -24,25 +24,22 @@ class VOCDataset(Dataset):
         self.target_shape = (self.S, self.S, self.B * 5 + self.C)
         self.labels = {}
         self.transform = None
-        if mode == 'train':
-            self.transform = Compose([
-                ToPILImage(),
-                ColorJitter(brightness=0.5, contrast=0.5, hue=0.5),
-                ToTensor(),
-                RandomErasing(),
-            ])
+        if mode == "train":
+            self.transform = Compose(
+                [
+                    ToPILImage(),
+                    ColorJitter(brightness=0.2, contrast=0.2, hue=0.2),
+                    ToTensor(),
+                ]
+            )
         else:
-            self.transform = Compose([
-                ToPILImage(),
-                ToTensor()
-            ])
-        with open(f'data/{self.mode}.txt', 'r') as f:
+            self.transform = Compose([ToPILImage(), ToTensor()])
+        with open(f"data/{self.mode}.txt", "r") as f:
             lines = f.readlines()
             self.lines = []
             for line in lines:
                 line = line.strip()
-                label_line = line.replace('images',
-                                          'labels').replace('.jpg', '.txt')
+                label_line = line.replace("images", "labels").replace(".jpg", ".txt")
                 arr = np.loadtxt(label_line)
                 if arr.size == 0:
                     continue
@@ -53,14 +50,14 @@ class VOCDataset(Dataset):
         self.height = 448
 
     def __len__(self):
-        return len(self.labels.keys()) if self.mode=='train' else 200
+        return len(self.labels.keys()) if self.mode == "train" else 200
 
     def make_target(self, labels, boxes):
-        '''
+        """
         labels = [1,2,3,4]
         boxes = [0.2 0.3 0.4 0.8]
         return [self.S,self.S,self.B*5+self.C]
-        '''
+        """
         # 生成预测目标和预测分类
         np_target = np.zeros(self.target_shape)
         np_class = np.zeros((len(boxes), self.C))
@@ -89,9 +86,9 @@ class VOCDataset(Dataset):
         img = cv2.imread(line)
         img = cv2.resize(img, (self.width, self.height))
         img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        #img = img.transpose(2, 0, 1)
+        # img = img.transpose(2, 0, 1)
         if self.transform:
-            img = self.transform(img)/255
+            img = self.transform(img) / 255
         labels = self.labels[line][:, 0].astype(np.uint8)
         boxes = self.labels[line][:, 1:]
         target = self.make_target(labels, boxes)
@@ -101,8 +98,8 @@ class VOCDataset(Dataset):
 
 
 if __name__ == "__main__":
-    data = VOCDataset('train')
-    loader = DataLoader(data,batch_size=2)
+    data = VOCDataset("train")
+    loader = DataLoader(data, batch_size=2)
     for ele in loader:
         print(ele[0].shape)
         break

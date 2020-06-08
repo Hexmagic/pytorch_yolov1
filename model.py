@@ -64,7 +64,7 @@ class VGG(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        x = self.avgpool(x)
+        #x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x
@@ -88,7 +88,7 @@ class YoLo(nn.Module):
 
 def yolo():
     vgg = VGG(make_layers(cfg['D'], batch_norm=True))
-    #vgg.load_state_dict(torch.load('weights/vgg16_bn-6c64b313.pth'))
+    vgg.load_state_dict(torch.load('weights/vgg16_bn-6c64b313.pth'))
     net = YoLo(vgg.features)
     return net
 
