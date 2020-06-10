@@ -81,17 +81,10 @@ class Detector(object):
             "train",
             "tvmonitor",
         ]
-        self.test_loader = DataLoader(
-            VOCDataset(mode="val", rt_name=True),
-            shuffle=False,
-            num_workers=1,
-            drop_last=True,
-            batch_size=2,
-        )
         parser = ArgumentParser()
         parser.add_argument("--weights", type=str, default="")
         param = parser.parse_args()
-        self.model = torch.load(param.weights)
+        #self.model = torch.load(param.weights)
         self.S = 7
         if not os.path.exists("output"):
             os.mkdir("output")
@@ -151,18 +144,21 @@ class Detector(object):
 
     def run(self):
         with torch.no_grad():
-            self.model.eval()
+            #self.model.eval()
             i = 0
-            for batch in tqdm(self.test_loader):
-                i += 1
-                img, target, name = batch
+            import os
+            from torchvision.transforms import ToTensor
+
+            for name in os.listdir("sample"):
+                img = cv2.imread(f"sample/{name}")
+                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+                img = cv2.resize(img, (416, 416))
+                img = ToTensor()(img).reshape((1,3,416,416))
                 img = Variable(img).cuda()
-                target = Variable(target).cuda()
                 pred = self.model(img)
                 pred = pred.cpu()
                 for ele in zip(name, pred):
                     self.draw_box(ele)
-                break
 
 
 if __name__ == "__main__":
