@@ -11,7 +11,6 @@ import math
 from argparse import ArgumentParser
 
 
-
 def update_lr(optimizer, epoch):
     lr = 0.001 - (epoch % 5 + 1) * 0.0001
     for param_group in optimizer.param_groups:
@@ -20,10 +19,11 @@ def update_lr(optimizer, epoch):
 
 def train():
     parser = ArgumentParser()
-    parser.add_argument('--visdom',action='store_true')
+    parser.add_argument("--visdom", action="store_true")
     param = parser.parse_args()
-    if parser.visdom:
+    if param.visdom:
         from visdom import Visdom
+
         dom = Visdom()
     train_loader = DataLoader(
         VOCDataset(mode="train"),
@@ -93,7 +93,7 @@ def train():
                 train_bar.set_postfix_str(
                     "o:{:.2f} n:{:.2f} x:{:.2f} w:{:.2f} c:{:.2f}".format(*loss_list)
                 )
-                if parser.visdom:
+                if param.visdom:
                     # train_bar.set_postfix_str(f"loss {np.mean(train_loss)}")
                     dom.line(train_loss, win="train", opts={"title": "Train loss"})
                     dom.line(t_obj_loss, win="obj", opts={"title": "obj"})
@@ -133,7 +133,7 @@ def train():
                     val_bar.set_postfix_str(
                         "o:{:.2f} n:{:.2f} x:{:.2f} w:{:.2f}c:{:.2f}".format(*loss_list)
                     )
-                    if parser.visdom:
+                    if param.visdom:
                         dom.line(
                             valid_loss, win="valid_loss", opts=dict(title="Valid loss")
                         )
