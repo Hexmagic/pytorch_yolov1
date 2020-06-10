@@ -152,7 +152,7 @@ class Detector(object):
             for name in os.listdir("sample"):
                 img = cv2.imread(f"sample/{name}")
                 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                img = cv2.resize(img, (416, 416))
+                img = cv2.resize(img, (448, 448))
                 img = ToTensor()(img).reshape((1,3,416,416))
                 img = Variable(img).cuda()
                 pred = self.model(img)
