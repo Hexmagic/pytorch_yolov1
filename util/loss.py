@@ -66,8 +66,8 @@ class YoloLoss(Module):
                 target_cell[i][4] = 0
         noobj_pred = pred[noobj_mask][:, :10].contiguous().view(-1, 5)
         noobj_target = target[noobj_mask][:, :10].contiguous().view(-1, 5)
-        tc = target_cell[..., :10].view(-1, 5)
-        pc = pred_cell[..., :10].view(-1, 5)
+        tc = target_cell[..., :10].contiguous().view(-1, 5)
+        pc = pred_cell[..., :10].contiguous().view(-1, 5)
         noobj_loss = F.mse_loss(noobj_target[:, 4], noobj_pred[:, 4], reduction="sum")
         obj_loss = F.mse_loss(tc[:, 4], pc[:, 4], reduction="sum")
         xy_loss = F.mse_loss(tc[:, :2], pc[:, :2], reduction="sum")
