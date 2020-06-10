@@ -44,7 +44,7 @@ class YoloLoss(Module):
     def forward(self, pred, target):
         batch_size = pred.size(0)
         mask = target[:, :, :, 4] > 0
-        noobj_mask = target[:, :, :, 4] == 0
+        # noobj_mask = target[:, :, :, 4] == 0
         target_cell = target[mask]
         pred_cell = pred[mask]
         obj_loss = 0
@@ -64,10 +64,18 @@ class YoloLoss(Module):
             else:
                 target_cell[i][9] = iou2
                 target_cell[i][4] = 0
-        noobj_pred = pred[noobj_mask][:, :10].contiguous().view(-1, 5)
-        noobj_target = target[noobj_mask][:, :10].contiguous().view(-1, 5)
+
         tc = target_cell[..., :10].contiguous().view(-1, 5)
         pc = pred_cell[..., :10].contiguous().view(-1, 5)
+
+        noobj_mask = tc[..., 4] == 0
+        noobj_pred = pred[:, :10].contiguous().view(-1, 5)[noobj_mask]
+        noobj_target = target[:, :10].contiguous().view(-1, 5)[noobj_mask]
+
+        mask = tc[..., 4] != 0
+        tc = tc[mask]
+        pc = pc[mask]
+        
         noobj_loss = F.mse_loss(noobj_target[:, 4], noobj_pred[:, 4], reduction="sum")
         obj_loss = F.mse_loss(tc[:, 4], pc[:, 4], reduction="sum")
         xy_loss = F.mse_loss(tc[:, :2], pc[:, :2], reduction="sum")
