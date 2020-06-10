@@ -158,7 +158,8 @@ class Detector(object):
                 img = Variable(img).cuda()
                 pred = self.model(img)
                 pred = pred.cpu()
-                for ele in zip(name, pred):
+                names = [name]
+                for ele in zip(names, pred):
                     self.draw_box(ele)
 
 
