@@ -20,7 +20,7 @@ def update_lr(optimizer, epoch):
 def train():
     parser = ArgumentParser()
     parser.add_argument("--visdom", action="store_true")
-    parser.add_argument('--batch_size',type=int,default=64)
+    parser.add_argument("--batch_size", type=int, default=64)
     param = parser.parse_args()
     if param.visdom:
         from visdom import Visdom
@@ -42,7 +42,7 @@ def train():
         shuffle=True,
     )
     net = yolo().cuda()
-    #net = torch.load("weights/75_net.pk")
+    # net = torch.load("weights/75_net.pk")
     criterion = YoloLoss().cuda()
     optim = SGD(
         params=net.parameters(),
@@ -57,7 +57,7 @@ def train():
     valid_loss = []
     train_loss = []
 
-    for epoch in range(90, 120):
+    for epoch in range(0, 120):
         train_bar = tqdm(train_loader, dynamic_ncols=True)
         val_bar = tqdm(valid_loader, dynamic_ncols=True)
         train_bar.set_description_str(f"epoch/{epoch}")
