@@ -82,7 +82,7 @@ class Detector(object):
             "tvmonitor",
         ]
         self.test_loader = DataLoader(
-            VOCDataset(mode="train", rt_name=True),
+            VOCDataset(mode="test", rt_name=True),
             shuffle=False,
             num_workers=1,
             drop_last=True,
