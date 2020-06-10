@@ -162,8 +162,7 @@ class Detector(object):
                 pred = pred.cpu()
                 for ele in zip(name, pred):
                     self.draw_box(ele)
-                if i > 10:
-                    break
+                break
 
 
 if __name__ == "__main__":
