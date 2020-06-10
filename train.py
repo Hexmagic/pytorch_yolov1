@@ -20,6 +20,7 @@ def update_lr(optimizer, epoch):
 def train():
     parser = ArgumentParser()
     parser.add_argument("--visdom", action="store_true")
+    parser.add_argument('--batch_size',type=int,default=64)
     param = parser.parse_args()
     if param.visdom:
         from visdom import Visdom
@@ -27,7 +28,7 @@ def train():
         dom = Visdom()
     train_loader = DataLoader(
         VOCDataset(mode="train"),
-        batch_size=32,
+        batch_size=param.batch_size,
         num_workers=8,
         drop_last=True,
         pin_memory=True,
@@ -35,7 +36,7 @@ def train():
     )
     valid_loader = DataLoader(
         VOCDataset(mode="val"),
-        batch_size=4,
+        batch_size=16,
         num_workers=4,
         drop_last=True,
         shuffle=True,
