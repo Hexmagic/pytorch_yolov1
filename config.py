@@ -1,0 +1,1 @@
+data_dir = 'VOC2012'

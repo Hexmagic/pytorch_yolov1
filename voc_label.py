@@ -3,13 +3,14 @@ import pickle
 import os
 from os import listdir, getcwd
 from os.path import join
+from config import data_dir
 sets = ['train', 'val']
 classes = [
     'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus', 'car', 'cat',
     'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike', 'person',
     'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
 ]
-dic = 'data'
+dic = data_dir
 
 
 def convert(size, box):

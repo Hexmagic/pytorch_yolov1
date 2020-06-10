@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import math
 import torch
+from config import data_dir
 from torchvision.transforms import (
     Compose,
     RandomErasing,
@@ -34,7 +35,7 @@ class VOCDataset(Dataset):
             )
         else:
             self.transform = Compose([ToPILImage(), ToTensor()])
-        with open(f"data/{self.mode}.txt", "r") as f:
+        with open(f"{data_dir}/{self.mode}.txt", "r") as f:
             lines = f.readlines()
             self.lines = []
             for line in lines:
