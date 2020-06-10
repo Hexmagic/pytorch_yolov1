@@ -20,7 +20,7 @@ def update_lr(optimizer, epoch):
 
 def train():
     parser = ArgumentParser()
-    parser.add_argument('--visdom',action='store_false')
+    parser.add_argument('--visdom',action='store_true')
     param = parser.parse_args()
     if parser.visdom:
         dom = Visdom()
