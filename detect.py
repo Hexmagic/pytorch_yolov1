@@ -84,7 +84,7 @@ class Detector(object):
         parser = ArgumentParser()
         parser.add_argument("--weights", type=str, default="")
         param = parser.parse_args()
-        #self.model = torch.load(param.weights)
+        self.model = torch.load(param.weights)
         self.S = 7
         if not os.path.exists("output"):
             os.mkdir("output")
@@ -144,7 +144,7 @@ class Detector(object):
 
     def run(self):
         with torch.no_grad():
-            #self.model.eval()
+            self.model.eval()
             i = 0
             import os
             from torchvision.transforms import ToTensor
