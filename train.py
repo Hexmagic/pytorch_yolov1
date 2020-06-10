@@ -8,18 +8,22 @@ from model import yolo
 from torch.autograd import Variable
 import numpy as np
 import math
-
+from argparse import ArgumentParser
 from visdom import Visdom
 
 
 def update_lr(optimizer, epoch):
-    lr = 0.001 - (epoch % 5+1) * 0.0001
+    lr = 0.001 - (epoch % 5 + 1) * 0.0001
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
 
 
 def train():
-    dom = Visdom()
+    parser = ArgumentParser()
+    parser.add_argument('--visdom',action='store_false')
+    param = parser.parse_args()
+    if parser.visdom:
+        dom = Visdom()
     train_loader = DataLoader(
         VOCDataset(mode="train"),
         batch_size=32,
@@ -88,13 +92,14 @@ def train():
                 train_bar.set_postfix_str(
                     "o:{:.2f} n:{:.2f} x:{:.2f} w:{:.2f} c:{:.2f}".format(*loss_list)
                 )
-                # train_bar.set_postfix_str(f"loss {np.mean(train_loss)}")
-                dom.line(train_loss, win="train", opts={"title": "Train loss"})
-                dom.line(t_obj_loss, win="obj", opts={"title": "obj"})
-                dom.line(t_nobj_loss, win="noobj", opts={"title": "noobj"})
-                dom.line(t_xy_loss, win="xy", opts={"title": "xy"})
-                dom.line(t_wh_loss, win="wh", opts={"title": "wh"})
-                dom.line(t_class_loss, win="class", opts={"title": "class"})
+                if parser.visdom:
+                    # train_bar.set_postfix_str(f"loss {np.mean(train_loss)}")
+                    dom.line(train_loss, win="train", opts={"title": "Train loss"})
+                    dom.line(t_obj_loss, win="obj", opts={"title": "obj"})
+                    dom.line(t_nobj_loss, win="noobj", opts={"title": "noobj"})
+                    dom.line(t_xy_loss, win="xy", opts={"title": "xy"})
+                    dom.line(t_wh_loss, win="wh", opts={"title": "wh"})
+                    dom.line(t_class_loss, win="class", opts={"title": "class"})
         if epoch % 5 == 0:
             torch.save(net, f"weights/{epoch}_net.pk")
         net.eval()
@@ -127,9 +132,10 @@ def train():
                     val_bar.set_postfix_str(
                         "o:{:.2f} n:{:.2f} x:{:.2f} w:{:.2f}c:{:.2f}".format(*loss_list)
                     )
-                    dom.line(
-                        valid_loss, win="valid_loss", opts=dict(title="Valid loss")
-                    )
+                    if parser.visdom:
+                        dom.line(
+                            valid_loss, win="valid_loss", opts=dict(title="Valid loss")
+                        )
 
     torch.save(net, f"weights/{epoch}_net.pk")
 
