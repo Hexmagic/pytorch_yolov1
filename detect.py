@@ -7,7 +7,7 @@ from PIL import Image
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-
+from argparse import ArgumentParser
 from util.dataset import VOCDataset
 
 VOC_CLASS_BGR = {
@@ -53,7 +53,10 @@ class Detector(object):
                                       num_workers=1,
                                       drop_last=True,
                                       batch_size=2)
-        self.model = torch.load('weights/90_net.pk')
+        parser=  ArgumentParser()
+        parser.add_argument('--weights',type=str)
+        param = parser.parse_args()
+        self.model = torch.load(param.weigths)
         self.S = 7
         if not os.path.exists('output'):
             os.mkdir('output')
@@ -124,7 +127,7 @@ class Detector(object):
                 pred = pred.cpu()
                 for ele in zip(name, pred):
                     self.draw_box(ele)
-                if i > 100:
+                if i > 10:
                     break
 
 
