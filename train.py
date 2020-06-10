@@ -9,7 +9,7 @@ from torch.autograd import Variable
 import numpy as np
 import math
 from argparse import ArgumentParser
-from visdom import Visdom
+
 
 
 def update_lr(optimizer, epoch):
@@ -23,6 +23,7 @@ def train():
     parser.add_argument('--visdom',action='store_true')
     param = parser.parse_args()
     if parser.visdom:
+        from visdom import Visdom
         dom = Visdom()
     train_loader = DataLoader(
         VOCDataset(mode="train"),
