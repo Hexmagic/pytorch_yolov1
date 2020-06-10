@@ -41,7 +41,7 @@ def train():
         shuffle=True,
     )
     net = yolo().cuda()
-    net = torch.load("weights/75_net.pk")
+    #net = torch.load("weights/75_net.pk")
     criterion = YoloLoss().cuda()
     optim = SGD(
         params=net.parameters(),
