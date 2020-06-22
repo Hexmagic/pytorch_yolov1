@@ -21,7 +21,7 @@ def train():
     parser = ArgumentParser()
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--batch_size", type=int, default=64)
-    parser.add_argument("--weights", type=str)
+    parser.add_argument("--weights", type=str, default="")
     parser.add_argument("--save_folder", type=str, default="weights")
     param = parser.parse_args()
     if param.visdom:
@@ -43,8 +43,10 @@ def train():
         drop_last=True,
         shuffle=True,
     )
-    net = yolo().cuda()
-    # net = torch.load("weights/75_net.pk")
+    if param.weights:
+        net = torch.load(param.weights)
+    else:
+        net = yolo().cuda()
     criterion = YoloLoss().cuda()
     optim = SGD(
         params=net.parameters(),
@@ -73,7 +75,7 @@ def train():
             obj_loss, noobj_loss, xy_loss, wh_loss, class_loss = criterion(
                 output, target.float()
             )
-            loss = obj_loss + noobj_loss + xy_loss + wh_loss + 2 * class_loss
+            loss = obj_loss + noobj_loss + xy_loss + wh_loss + class_loss
             loss.backward()
             train_loss.append(loss.item())
             t_obj_loss.append(obj_loss.item())
