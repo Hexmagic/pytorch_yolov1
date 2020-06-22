@@ -21,6 +21,8 @@ def train():
     parser = ArgumentParser()
     parser.add_argument("--visdom", action="store_true")
     parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--weights", type=str)
+    parser.add_argument("--save_folder", type=str, default="weights")
     param = parser.parse_args()
     if param.visdom:
         from visdom import Visdom
@@ -103,7 +105,7 @@ def train():
                     dom.line(t_wh_loss, win="wh", opts={"title": "wh"})
                     dom.line(t_class_loss, win="class", opts={"title": "class"})
         if epoch % 5 == 0:
-            torch.save(net, f"weights/{epoch}_net.pk")
+            torch.save(net, f"{param.save_folder}/{epoch}_net.pk")
         net.eval()
         with torch.no_grad():
             for i, ele in enumerate(val_bar):
@@ -139,7 +141,7 @@ def train():
                             valid_loss, win="valid_loss", opts=dict(title="Valid loss")
                         )
 
-    torch.save(net, f"weights/{epoch}_net.pk")
+    torch.save(net, f"{param.save_folder}/{epoch}_net.pk")
 
 
 def test():
