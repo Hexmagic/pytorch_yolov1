@@ -4,6 +4,7 @@ import numpy as np
 import math
 import torch
 from config import data_dir
+#data_dir='data'
 from torchvision.transforms import (
     Compose,
     RandomErasing,
@@ -52,7 +53,7 @@ class VOCDataset(Dataset):
         self.height = 448
 
     def __len__(self):
-        return len(self.labels.keys()) if self.mode == "train" else 200
+        return len(self.labels.keys()) if self.mode == "train" else 800
 
     def make_target(self, labels, boxes):
         """
@@ -103,5 +104,8 @@ if __name__ == "__main__":
     data = VOCDataset("train")
     loader = DataLoader(data, batch_size=2)
     for ele in loader:
-        print(ele[0].shape)
-        break
+        m1 = torch.max(ele[1][...,0])
+        m2 = torch.max(ele[1][...,1])
+        if m1>1 or m2>1:
+            print('error')
+        
