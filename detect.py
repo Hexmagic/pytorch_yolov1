@@ -65,7 +65,7 @@ def decoder(pred):
     pred (tensor) 1x7x7x30
     return (tensor) box[[x1,y1,x2,y2]] label[...]
     """
-    grid_num = 14
+    grid_num = 7
     boxes = []
     cls_indexs = []
     probs = []
