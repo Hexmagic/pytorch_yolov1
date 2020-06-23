@@ -62,7 +62,7 @@ def train():
     valid_loss = []
     train_loss = []
 
-    for epoch in range(0, 120):
+    for epoch in range(0, param.epochs):
         train_bar = tqdm(train_loader, dynamic_ncols=True)
         val_bar = tqdm(valid_loader, dynamic_ncols=True)
         train_bar.set_description_str(f"epoch/{epoch}")
