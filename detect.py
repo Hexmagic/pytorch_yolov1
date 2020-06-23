@@ -1,168 +1,232 @@
-import os
+# encoding:utf-8
+#
+# created by xiongzihua
+#
+import torch
+from torch.autograd import Variable
+import torch.nn as nn
 
+# from net import vgg16, vgg16_bn
+# from resnet_yolo import resnet50
+import torchvision.transforms as transforms
 import cv2
 import numpy as np
-import torch
-from PIL import Image
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
-from tqdm import tqdm
-from argparse import ArgumentParser
-from util.dataset import VOCDataset
 
-VOC_CLASS_BGR = {
-    "aeroplane": (128, 0, 0),
-    "bicycle": (0, 128, 0),
-    "bird": (128, 128, 0),
-    "boat": (0, 0, 128),
-    "bottle": (128, 0, 128),
-    "bus": (0, 128, 128),
-    "car": (128, 128, 128),
-    "cat": (64, 0, 0),
-    "chair": (192, 0, 0),
-    "cow": (64, 128, 0),
-    "diningtable": (192, 128, 0),
-    "dog": (64, 0, 128),
-    "horse": (192, 0, 128),
-    "motorbike": (64, 128, 128),
-    "person": (192, 128, 128),
-    "pottedplant": (0, 64, 0),
-    "sheep": (128, 64, 0),
-    "sofa": (0, 192, 0),
-    "train": (128, 192, 0),
-    "tvmonitor": (0, 64, 128),
-}
+VOC_CLASSES = (  # always index 0
+    "aeroplane",
+    "bicycle",
+    "bird",
+    "boat",
+    "bottle",
+    "bus",
+    "car",
+    "cat",
+    "chair",
+    "cow",
+    "diningtable",
+    "dog",
+    "horse",
+    "motorbike",
+    "person",
+    "pottedplant",
+    "sheep",
+    "sofa",
+    "train",
+    "tvmonitor",
+)
+
+Color = [
+    [0, 0, 0],
+    [128, 0, 0],
+    [0, 128, 0],
+    [128, 128, 0],
+    [0, 0, 128],
+    [128, 0, 128],
+    [0, 128, 128],
+    [128, 128, 128],
+    [64, 0, 0],
+    [192, 0, 0],
+    [64, 128, 0],
+    [192, 128, 0],
+    [64, 0, 128],
+    [192, 0, 128],
+    [64, 128, 128],
+    [192, 128, 128],
+    [0, 64, 0],
+    [128, 64, 0],
+    [0, 192, 0],
+    [128, 192, 0],
+    [0, 64, 128],
+]
 
 
-class Detector(object):
-    def __init__(self):
-        self.color_map = [
-            [128, 0, 0],
-            [0, 128, 0],
-            [128, 128, 0],
-            [0, 0, 128],
-            [128, 0, 128],
-            [0, 128, 128],
-            [128, 128, 128],
-            [64, 0, 0],
-            [192, 0, 0],
-            [64, 128, 0],
-            [192, 128, 0],
-            [64, 0, 128],
-            [192, 0, 128],
-            [64, 128, 128],
-            [192, 128, 128],
-            [0, 64, 0],
-            [128, 64, 0],
-            [0, 192, 0],
-            [128, 192, 0],
-            [0, 64, 128],
-            [0, 64, 128],
-        ]
-        self.name_map = [
-            "aeroplane",
-            "bicycle",
-            "bird",
-            "boat",
-            "bottle",
-            "bus",
-            "car",
-            "cat",
-            "chair",
-            "cow",
-            "diningtable",
-            "dog",
-            "horse",
-            "motorbike",
-            "person",
-            "pottedplant",
-            "sheep",
-            "sofa",
-            "train",
-            "tvmonitor",
-        ]
-        parser = ArgumentParser()
-        parser.add_argument("--weights", type=str, default="")
-        param = parser.parse_args()
-        self.model = torch.load(param.weights)
-        self.S = 7
-        if not os.path.exists("output"):
-            os.mkdir("output")
+def decoder(pred):
+    """
+    pred (tensor) 1x7x7x30
+    return (tensor) box[[x1,y1,x2,y2]] label[...]
+    """
+    grid_num = 14
+    boxes = []
+    cls_indexs = []
+    probs = []
+    cell_size = 1.0 / grid_num
+    pred = pred.data
+    pred = pred.squeeze(0)  # 7x7x30
+    contain1 = pred[:, :, 4].unsqueeze(2)
+    contain2 = pred[:, :, 9].unsqueeze(2)
+    contain = torch.cat((contain1, contain2), 2)
+    mask1 = contain > 0.1  # 大于阈值
+    mask2 = (
+        contain == contain.max()
+    )  # we always select the best contain_prob what ever it>0.9
+    mask = (mask1 + mask2).gt(0)
+    # min_score,min_index = torch.min(contain,2) #每个cell只选最大概率的那个预测框
+    for i in range(grid_num):
+        for j in range(grid_num):
+            for b in range(2):
+                # index = min_index[i,j]
+                # mask[i,j,index] = 0
+                if mask[i, j, b] == 1:
+                    # print(i,j,b)
+                    box = pred[i, j, b * 5 : b * 5 + 4]
+                    contain_prob = torch.FloatTensor([pred[i, j, b * 5 + 4]])
+                    xy = (
+                        torch.FloatTensor([j, i]) * cell_size
+                    )  # cell左上角  up left of cell
+                    box[:2] = box[:2] * cell_size + xy  # return cxcy relative to image
+                    box_xy = torch.FloatTensor(
+                        box.size()
+                    )  # 转换成xy形式    convert[cx,cy,w,h] to [x1,xy1,x2,y2]
+                    box_xy[:2] = box[:2] - 0.5 * box[2:]
+                    box_xy[2:] = box[:2] + 0.5 * box[2:]
+                    max_prob, cls_index = torch.max(pred[i, j, 10:], 0)
+                    if float((contain_prob * max_prob)[0]) > 0.1:
+                        boxes.append(box_xy.view(1, 4))
+                        cls_indexs.append(cls_index)
+                        probs.append(contain_prob * max_prob)
+    if len(boxes) == 0:
+        boxes = torch.zeros((1, 4))
+        probs = torch.zeros(1)
+        cls_indexs = torch.zeros(1)
+    else:
+        boxes = torch.cat(boxes, 0)  # (n,4)
+        probs = torch.cat(probs, 0)  # (n,)
+        cls_indexs = torch.cat(cls_indexs, 0)  # (n,)
+    keep = nms(boxes, probs)
+    return boxes[keep], cls_indexs[keep], probs[keep]
 
-    def conver_box(self, box, index):
-        x, y, w, h = box
-        c, r = index
-        step = 1 / self.S
-        x = (x + c) * step
-        y = (y + r) * step
-        # x, y, w, h = x.item(), y.item(), w.item(), h.item()
-        a, b, c, d = [x - w / 2, y - h / 2, x + w / 2, y + h / 2]
-        return [max(a.item(), 0), max(b.item(), 0), min(c.item(), 1), min(d.item(), 1)]
 
-    def draw_box(self, zp):
-        name, pred = zp
-        img = cv2.imread(name)
-        h, w, _ = img.shape
-        img = cv2.resize(img, (448, 448))
-        pred = pred.reshape((-1, 30))
-        mask = pred[:, 4] > 0.12
-        indexs = np.argwhere(mask == True).T
-        # print(indexs)
-        for index in indexs:
-            # b, a = index
-            c = index % 7
-            r = index // 7
-            cell = pred[index][0]  # [b]
+def nms(bboxes, scores, threshold=0.5):
+    """
+    bboxes(tensor) [N,4]
+    scores(tensor) [N,]
+    """
+    x1 = bboxes[:, 0]
+    y1 = bboxes[:, 1]
+    x2 = bboxes[:, 2]
+    y2 = bboxes[:, 3]
+    areas = (x2 - x1) * (y2 - y1)
 
-            pred_class = torch.argmax(cell[10:])
-            cls_name = self.name_map[pred_class.item()]
-            color = self.color_map[pred_class.item()]
-            if cell[4] > cell[9]:
-                box = cell[:4]
-                score = cell[4]
-            else:
-                box = cell[5:9]
-                score = cell[9]
-            # if score.item() < 0.1:
-            #     continue
-            rect = self.conver_box(box, [c, r])
-            rect = list(map(lambda x: int(448 * x), rect))
-            cv2.putText(
-                img,
-                "{}:{:.2f}".format(cls_name, score.item()),
-                tuple(rect[:2]),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                1,
-                (0, 255, 40),
-                1,
-            )
-            cv2.rectangle(img, tuple(rect[:2]), tuple(rect[2:]), tuple(color), 1)
-        img = cv2.resize(img, (h, w))
-        img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-        img = Image.fromarray(img)
-        img.save(f'output/{name.split("/")[-1]}')
+    _, order = scores.sort(0, descending=True)
+    keep = []
+    while order.numel() > 0:
+        i = order[0]
+        keep.append(i)
 
-    def run(self):
-        with torch.no_grad():
-            self.model.eval()
-            i = 0
-            import os
-            from torchvision.transforms import ToTensor
+        if order.numel() == 1:
+            break
 
-            for iname in os.listdir("sample"):
-                name = f'sample/{iname}'
-                img = cv2.imread(name)
-                img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-                img = cv2.resize(img, (448, 448))
-                img = ToTensor()(img).reshape((1,3,448,448))
-                img = Variable(img).cuda()
-                pred = self.model(img)
-                pred = pred.cpu()
-                names = [name]
-                for ele in zip(names, pred):
-                    self.draw_box(ele)
+        xx1 = x1[order[1:]].clamp(min=x1[i])
+        yy1 = y1[order[1:]].clamp(min=y1[i])
+        xx2 = x2[order[1:]].clamp(max=x2[i])
+        yy2 = y2[order[1:]].clamp(max=y2[i])
+
+        w = (xx2 - xx1).clamp(min=0)
+        h = (yy2 - yy1).clamp(min=0)
+        inter = w * h
+
+        ovr = inter / (areas[i] + areas[order[1:]] - inter)
+        ids = (ovr <= threshold).nonzero().squeeze()
+        if ids.numel() == 0:
+            break
+        order = order[ids + 1]
+    return torch.LongTensor(keep)
+
+
+#
+# start predict one image
+#
+def predict_gpu(model, image_name, root_path=""):
+
+    result = []
+    image = cv2.imread(root_path + image_name)
+    h, w, _ = image.shape
+    img = cv2.resize(image, (448, 448))
+    img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    mean = (123, 117, 104)  # RGB
+    img = img - np.array(mean, dtype=np.float32)
+
+    transform = transforms.Compose([transforms.ToTensor(),])
+    img = transform(img)
+    img = Variable(img[None, :, :, :], volatile=True)
+    img = img.cuda()
+
+    pred = model(img)  # 1x7x7x30
+    pred = pred.cpu()
+    boxes, cls_indexs, probs = decoder(pred)
+
+    for i, box in enumerate(boxes):
+        x1 = int(box[0] * w)
+        x2 = int(box[2] * w)
+        y1 = int(box[1] * h)
+        y2 = int(box[3] * h)
+        cls_index = cls_indexs[i]
+        cls_index = int(cls_index)  # convert LongTensor to int
+        prob = probs[i]
+        prob = float(prob)
+        result.append([(x1, y1), (x2, y2), VOC_CLASSES[cls_index], image_name, prob])
+    return result
 
 
 if __name__ == "__main__":
-    dec = Detector()
-    dec.run()
+    from argparse import ArgumentParser
+
+    parser = ArgumentParser()
+    parser.add_argument("--weights", type=str)
+    opt = parser.parse_args()
+    model = torch.load(opt.weights)
+    # model = resnet50()
+    print("load model...")
+    # model.load_state_dict(torch.load(opt.))
+    model.eval()
+    model.cuda()
+    image_name = "sample/dog.jpg"
+    image = cv2.imread(image_name)
+    print("predicting...")
+    result = predict_gpu(model, image_name)
+    for left_up, right_bottom, class_name, _, prob in result:
+        color = Color[VOC_CLASSES.index(class_name)]
+        cv2.rectangle(image, left_up, right_bottom, color, 2)
+        label = class_name + str(round(prob, 2))
+        text_size, baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
+        p1 = (left_up[0], left_up[1] - text_size[1])
+        cv2.rectangle(
+            image,
+            (p1[0] - 2 // 2, p1[1] - 2 - baseline),
+            (p1[0] + text_size[0], p1[1] + text_size[1]),
+            color,
+            -1,
+        )
+        cv2.putText(
+            image,
+            label,
+            (p1[0], p1[1] + baseline),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (255, 255, 255),
+            1,
+            8,
+        )
+
+    cv2.imwrite("result.jpg", image)
+

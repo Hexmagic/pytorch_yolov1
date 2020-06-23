@@ -12,7 +12,7 @@ from argparse import ArgumentParser
 
 
 def update_lr(optimizer, epoch):
-    lr = 0.001 - (epoch % 5 + 1) * 0.0001
+    lr = 0.001 - (epoch % 5 + 1) * 0.0001 - math.sqrt(epoch) * 1e-5
     for param_group in optimizer.param_groups:
         param_group["lr"] = lr
 
@@ -23,6 +23,7 @@ def train():
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--weights", type=str, default="")
     parser.add_argument("--save_folder", type=str, default="weights")
+    parser.add_argument("--epochs", type=int, default=1000)
     param = parser.parse_args()
     if param.visdom:
         from visdom import Visdom
