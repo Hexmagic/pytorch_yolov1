@@ -28,7 +28,7 @@ def cal_loss(loss_list):
 
 def train():
     parser = ArgumentParser()
-    parser.add_argument("--batch_size", type=int, default=1)
+    parser.add_argument("--batch_size", type=int, default=32)
     parser.add_argument("--max_iter", type=int, default=120000)
     parser.add_argument("--start_iter", type=int, default=1)
     parser.add_argument("--n_cpu", type=int, default=8)
@@ -67,8 +67,9 @@ def train():
             loss_map = cal_loss(loss_dict_list)
             end = time.time()
             eta = round(end - start, 2)
+            mem = torch.cuda.max_memory_allocated() / 1024 / 1024
             print(
-                f"Iter {iter_i}:total loss {loss_map['total_loss']} reg_loss {loss_map['reg_loss']} conf loss {loss_map['conf_loss']} cls_loss {loss_map['cls_loss']} eta: {eta}"
+                f"Iter {iter_i}:total loss {loss_map['total_loss']} reg_loss {loss_map['reg_loss']} conf loss {loss_map['conf_loss']} cls_loss {loss_map['cls_loss']} eta: {eta} mem:{mem}"
             )
             loss_dict_list = []
             start = end
