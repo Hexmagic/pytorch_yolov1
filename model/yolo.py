@@ -1,6 +1,6 @@
 from torch import nn
 from model.vgg import build_vgg
-
+import torch
 
 class YoLo(nn.Module):
     def __init__(self, features, num_classes=20):

@@ -89,8 +89,9 @@ class YoloLoss(Module):
         class_loss = F.mse_loss(pred_cell[:, 10:],
                                 target_cell[:, 10:],
                                 reduction="sum")
-        loss = dict(conf_loss=obj_loss + self.lambda_noobj * noobj_loss,
-                    reg_loss=self.lambda_coord * xy_loss +
-                    self.lambda_coord * wh_loss,
-                    cls_loss=class_loss)
+        loss = dict(conf_loss=(obj_loss + self.lambda_noobj * noobj_loss) /
+                    batch_size,
+                    reg_loss=(self.lambda_coord * xy_loss +
+                              self.lambda_coord * wh_loss) / batch_size,
+                    cls_loss=class_loss / batch_size)
         return loss
