@@ -23,7 +23,7 @@ def cal_loss(recoder, iter_i):
     loss_map = {}
     for key in recoder.keys():
         loss_map[key] = round(recoder[key].item() / iter_i, 2)
-    loss_map['total_loss'] = round(sum(loss_map.values()))
+    loss_map['total_loss'] = round(sum(loss_map.values()),2)
     return loss_map
 
 
