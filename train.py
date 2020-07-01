@@ -22,7 +22,7 @@ def cal_loss(loss_list):
             loss_map[key].append(loss_dict[key])
     for key in loss_map.keys():
         loss_map[key] = round((sum(loss_map[key]) / length).item(), 2)
-    loss_map['total_loss'] = sum(loss_map.values())
+    loss_map['total_loss'] = round(sum(loss_map.values()), 2)
     return loss_map
 
 
