@@ -1,6 +1,9 @@
-from torch import nn
-import torch.nn.functional as F
 import torch
+import torch.nn.functional as F
+from torch import nn
+
+from utils.modelzoo import load_state_dict_from_url
+
 cfg = {
     'A': [64, 'M', 128, 'M', 256, 256, 'M', 512, 512, 'M', 512, 512, 'M'],
     'B':
@@ -63,49 +66,14 @@ class VGG(nn.Module):
 
     def forward(self, x):
         x = self.features(x)
-        #x = self.avgpool(x)
         x = x.view(x.size(0), -1)
         x = self.classifier(x)
         return x
 
 
-class YoLo(nn.Module):
-    def __init__(self, features, num_classes=20):
-        super(YoLo, self).__init__()
-        self.features = features
-        self.classify = nn.Sequential(nn.Linear(512 * 7 * 7, 4096),
-                                      nn.Dropout(), nn.LeakyReLU(inplace=True),
-                                    nn.Linear(4096, 1470))
-        # for m in self.modules():
-        #     if isinstance(m, nn.Conv2d):
-        #         nn.init.kaiming_normal_(m.weight, mode='fan_out')
-        #         if m.bias is not None:
-        #             nn.init.constant_(m.bias, 0)
-        #     elif isinstance(m, nn.BatchNorm2d):
-        #         nn.init.constant_(m.weight, 1)
-        #         nn.init.constant_(m.bias, 0)
-        #     elif isinstance(m, nn.Linear):
-        #         nn.init.normal_(m.weight, 0, 0.01)
-        #         nn.init.constant_(m.bias, 0)
-
-    def forward(self, x):
-        x = self.features(x)
-        x = x.view(x.size(0), -1)
-        x = self.classify(x)
-        x = torch.sigmoid(x)
-        return x.view(-1, 7, 7, 30)
-
-
-def yolo():
+def build_vgg():
     vgg = VGG(make_layers(cfg['D'], batch_norm=True))
-    vgg.load_state_dict(torch.load('weights/vgg16_bn-6c64b313.pth'))
-    net = YoLo(vgg.features)
-    return net
-
-
-if __name__ == "__main__":
-    net = yolo()
-
-    data = torch.rand((1, 3, 448, 448))
-    rst = net(data)
-    print(rst.shape)
+    vgg.load_state_dict(
+        load_state_dict_from_url(
+            'https://download.pytorch.org/models/vgg16_bn-6c64b313.pth'))
+    return vgg

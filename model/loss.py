@@ -1,9 +1,8 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.autograd import Variable
 from torch.nn import *
-from shapely.geometry import Polygon
-import numpy as np
 
 
 class YoloLoss(Module):
@@ -78,24 +77,20 @@ class YoloLoss(Module):
         tc = tc[mask]
         pc = pc[mask]
 
-        noobj_loss = F.mse_loss(noobj_target[:, 4], noobj_pred[:, 4], reduction="sum")
+        noobj_loss = F.mse_loss(noobj_target[:, 4],
+                                noobj_pred[:, 4],
+                                reduction="sum")
         obj_loss = F.mse_loss(tc[:, 4], pc[:, 4], reduction="sum")
         xy_loss = F.mse_loss(tc[:, :2], pc[:, :2], reduction="sum")
-        wh_loss = F.mse_loss(
-            torch.sqrt(tc[:, 2:4]), torch.sqrt(pc[:, 2:4]), reduction="sum"
-        )
+        wh_loss = F.mse_loss(torch.sqrt(tc[:, 2:4]),
+                             torch.sqrt(pc[:, 2:4]),
+                             reduction="sum")
 
-        class_loss = F.mse_loss(pred_cell[:, 10:], target_cell[:, 10:], reduction="sum")
-        loss = [
-            obj_loss,
-            self.lambda_noobj * noobj_loss,
-            self.lambda_coord * xy_loss,
-            self.lambda_coord * wh_loss,
-            class_loss,
-        ]
-        loss = [ele / batch_size for ele in loss]
+        class_loss = F.mse_loss(pred_cell[:, 10:],
+                                target_cell[:, 10:],
+                                reduction="sum")
+        loss = dict(conf_loss=obj_loss + self.lambda_noobj * noobj_loss,
+                    reg_loss=self.lambda_coord * xy_loss +
+                    self.lambda_coord * wh_loss,
+                    cls_loss=class_loss)
         return loss
-
-
-a = [0.8980, 0.0853, 0.0400, 0.1333]
-b = [1.3521e-02, 8.1162e-01, 9.1178e-03, 3.3432e-04]
