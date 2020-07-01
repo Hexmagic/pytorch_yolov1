@@ -14,15 +14,15 @@ from utils.lr_scheduler import make_lr_scheduler, make_optimizer
 import time
 
 
-def cal_loss(loss_list):
-    loss_map = defaultdict(list)
-    length = len(loss_list)
-    for loss_dict in loss_list:
-        for key in loss_dict:
-            loss_map[key].append(loss_dict[key])
-    for key in loss_map.keys():
-        loss_map[key] = round((sum(loss_map[key]) / length).item(), 2)
-    loss_map['total_loss'] = round(sum(loss_map.values()), 2)
+def record_loss(loss_dict, recoder):
+    for key in loss_dict:
+        recoder[key] += loss_dict[key]
+
+
+def cal_loss(recoder, iter_i):
+    loss_map = {}
+    for key in recoder.keys():
+        loss_map[key] = recoder[key] / iter_i
     return loss_map
 
 
@@ -53,25 +53,25 @@ def train():
     model.train()
     loss_dict_list = []
     start = time.time()
+    recoder = {'reg_loss': 0, 'conf_loss': 0, 'cls_loss': 0}
     for iter_i, (img, target) in enumerate(dataloader, opt.start_iter):
         img, target = Variable(img).cuda(), Variable(target).cuda()
         output = model(img)
         optim.zero_grad()
         loss_dict = criterion(output, target.float())
-        loss_dict_list.append(loss_dict)
+        record_loss(loss_dict, recoder)
         loss = sum(x for x in loss_dict.values())
         loss.backward()
         optim.step()
         lr_scheduler.step()
         if iter_i % 10 == 0:
-            loss_map = cal_loss(loss_dict_list)
+            loss_map = cal_loss(recoder, iter_i)
             end = time.time()
             eta = round(end - start, 2)
             mem = torch.cuda.max_memory_allocated() / 1024 / 1024
             print(
                 f"Iter {iter_i}:total loss {loss_map['total_loss']} reg_loss {loss_map['reg_loss']} conf loss {loss_map['conf_loss']} cls_loss {loss_map['cls_loss']} eta: {eta} mem:{mem}"
             )
-            loss_dict_list = []
             start = end
         if iter_i % 2000 == 0:
             torch.save(model, f"{opt.save_folder}/{iter_i}_yolov1.pk")
