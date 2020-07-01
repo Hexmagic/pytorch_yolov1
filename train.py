@@ -22,7 +22,8 @@ def record_loss(loss_dict, recoder):
 def cal_loss(recoder, iter_i):
     loss_map = {}
     for key in recoder.keys():
-        loss_map[key] = recoder[key] / iter_i
+        loss_map[key] = round(recoder[key] / iter_i, 2)
+    loss_map['total_loss'] = round(sum(loss_map.values()))
     return loss_map
 
 
@@ -51,7 +52,6 @@ def train():
     dataset = make_train_dataset(opt)
     dataloader = make_dataloader(dataset, opt)
     model.train()
-    loss_dict_list = []
     start = time.time()
     recoder = {'reg_loss': 0, 'conf_loss': 0, 'cls_loss': 0}
     for iter_i, (img, target) in enumerate(dataloader, opt.start_iter):
