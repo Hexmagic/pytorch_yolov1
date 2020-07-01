@@ -22,7 +22,7 @@ def record_loss(loss_dict, recoder):
 def cal_loss(recoder, iter_i):
     loss_map = {}
     for key in recoder.keys():
-        loss_map[key] = round(recoder[key] / iter_i, 2)
+        loss_map[key] = round(recoder[key].item() / iter_i, 2)
     loss_map['total_loss'] = round(sum(loss_map.values()))
     return loss_map
 
