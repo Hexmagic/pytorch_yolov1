@@ -58,7 +58,7 @@ def train():
     parser.add_argument("--save_folder", type=str, default="weights")
     parser.add_argument("--img_size", type=int, default=448)
     opt = parser.parse_args()
-    print(opt)
+    torch.backends.cudnn.enabled=True
     torch.backends.cudnn.benchmark = True  # 加快训练
 
     if opt.pretrained_weights:
