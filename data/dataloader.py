@@ -6,12 +6,17 @@ from data.voc import VOCDataset
 from utils.iter_sampler import IterationBasedBatchSampler
 
 
-def make_dataloader(dataset, opt):
-    batch_size, start_iter, n_cpu, max_iter = opt.batch_size, opt.start_iter, opt.n_cpu, opt.max_iter
+def make_dataloader(dataset,
+                    batch_size,
+                    n_cpu,
+                    start_iter,
+                    max_iter,
+                    not_stop=True):
+
     sampler = torch.utils.data.RandomSampler(dataset)
     batch_sampler = torch.utils.data.sampler.BatchSampler(
         sampler=sampler, batch_size=batch_size, drop_last=False)
-    if max_iter is not None:
+    if not_stop:
         batch_sampler = IterationBasedBatchSampler(batch_sampler,
                                                    num_iterations=max_iter,
                                                    start_iter=start_iter)
@@ -23,11 +28,34 @@ def make_dataloader(dataset, opt):
     return data_loader
 
 
-def make_train_dataset(opt):
+def make_train_dataloader(opt):
 
     dataset = VOCDataset(data_dir=opt.data_dir,
                          split='train',
                          img_size=opt.img_size,
                          transform=build_transfrom('train', opt.img_size),
                          target_transform=build_target_transform())
-    return dataset
+    batch_size, n_cpu, start_iter = opt.val_batch_size, opt.n_cpu, opt.start_iter
+
+    return make_dataloader(dataset,
+                           batch_size,
+                           n_cpu,
+                           start_iter=start_iter,
+                           max_iter=opt.max_iter,
+                           not_stop=True)
+
+
+def make_valid_dataloader(opt):
+
+    dataset = VOCDataset(data_dir=opt.data_dir,
+                         split='val',
+                         img_size=opt.img_size,
+                         transform=build_transfrom('val', opt.img_size),
+                         target_transform=build_target_transform())
+    batch_size, n_cpu = opt.val_batch_size, opt.n_cpu
+    return make_dataloader(dataset,
+                           batch_size,
+                           n_cpu,
+                           start_iter=0,
+                           max_iter=opt.max_iter,
+                           not_stop=False)

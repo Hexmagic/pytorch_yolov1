@@ -8,10 +8,10 @@ from sys import platform
 
 
 class VOCDataset(torch.utils.data.Dataset):
-    class_names = ('aeroplane', 'bicycle', 'bird', 'boat',
-                   'bottle', 'bus', 'car', 'cat', 'chair', 'cow',
-                   'diningtable', 'dog', 'horse', 'motorbike', 'person',
-                   'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor')
+    class_names = ('aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
+                   'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse',
+                   'motorbike', 'person', 'pottedplant', 'sheep', 'sofa',
+                   'train', 'tvmonitor')
     sep = '\\' if platform == 'win32' else '/'
 
     def __init__(self,
@@ -60,6 +60,7 @@ class VOCDataset(torch.utils.data.Dataset):
         image = self._read_image(image_id)
         if self.transform:
             image, boxes, labels = self.transform(image, boxes, labels)
+            boxes = np.clip(boxes, 0.0, 1.0)
         if self.target_transform:
             image, targets = self.target_transform(image, boxes, labels)
             return image, targets
@@ -70,7 +71,7 @@ class VOCDataset(torch.utils.data.Dataset):
         return image_id, self._get_annotation(image_id)
 
     def __len__(self):
-        return len(self.ids)
+        return len(self.ids) if self.split=='train' else 800
 
     @staticmethod
     def _read_image_ids(image_sets_files):

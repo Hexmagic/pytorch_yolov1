@@ -20,6 +20,7 @@ def build_transfrom(split, img_size):
         transform = [
             Resize(img_size),
             SubtractMeans([123, 117, 104]),
+            ToPercentCoords(),
             ToTensor()
         ]
     return Compose(transform)
@@ -52,8 +53,8 @@ class TargetTransoform(object):
             label = np_class[i]
             cx, cy, w, h = box
             # 获取中心点所在的格子,3.5 实际是第四个格子，但是0为第一个，所以索引为3
-            bx = math.floor(cx / step)
-            by = math.floor(cy / step)
+            bx = math.floor(cx / (step+1e-5))# 防止在边界上
+            by = math.floor(cy / (step+1e-5))
             cx = cx % step / step
             cy = cy % step / step
             box = [cx, cy, w, h]
