@@ -57,8 +57,8 @@ class yoloLoss(nn.Module):
         N = pred_tensor.size()[0]
         coo_mask = target_tensor[:, :, :, 4] > 0
         noo_mask = target_tensor[:, :, :, 4] == 0
-        coo_mask = coo_mask.unsqueeze(-1).expand_as(target_tensor)
-        noo_mask = noo_mask.unsqueeze(-1).expand_as(target_tensor)
+        coo_mask = coo_mask.unsqueeze(-1).expand_as(target_tensor).bool()
+        noo_mask = noo_mask.unsqueeze(-1).expand_as(target_tensor).bool()
 
         coo_pred = pred_tensor[coo_mask].view(-1, 30)
         box_pred = coo_pred[:, :10].contiguous().view(-1,
@@ -76,6 +76,7 @@ class yoloLoss(nn.Module):
         noo_pred_mask.zero_()
         noo_pred_mask[:, 4] = 1
         noo_pred_mask[:, 9] = 1
+        noo_pred_mask = noo_pred_mask.bool()
         noo_pred_c = noo_pred[noo_pred_mask]  #noo pred只需要计算 c 的损失 size[-1,2]
         noo_target_c = noo_target[noo_pred_mask]
         nooobj_loss = F.mse_loss(noo_pred_c, noo_target_c, size_average=False)
@@ -112,6 +113,8 @@ class yoloLoss(nn.Module):
                                max_iou).data.cuda()
         box_target_iou = Variable(box_target_iou).cuda()
         #1.response loss
+        coo_response_mask = coo_response_mask.bool()
+        coo_not_response_mask = coo_not_response_mask.bool()
         box_pred_response = box_pred[coo_response_mask].view(-1, 5)
         box_target_response_iou = box_target_iou[coo_response_mask].view(-1, 5)
         box_target_response = box_target[coo_response_mask].view(-1, 5)
