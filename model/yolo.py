@@ -8,7 +8,7 @@ class YoLo(nn.Module):
         super(YoLo, self).__init__()
         self.features = features
         self.classify = nn.Sequential(nn.Linear(512 * 7 * 7, 4096),
-                                      nn.PReLU(inplace=True),
+                                      nn.ELU(inplace=True),
                                       nn.Dropout(),
                                       nn.Linear(4096, 1470))
 
