@@ -23,7 +23,7 @@ def cal_loss(recoder, iter_i):
     loss_map = {}
     for key in recoder.keys():
         loss_map[key] = round(recoder[key].item() / iter_i, 2)
-    loss_map['total_loss'] = round(sum(loss_map.values()),2)
+    loss_map['total_loss'] = round(sum(loss_map.values()), 2)
     return loss_map
 
 
@@ -74,8 +74,9 @@ def train():
             )
             start = end
         if iter_i % 2000 == 0:
-            torch.save(model, f"{opt.save_folder}/{iter_i}_yolov1.pk")
-    torch.save(model, f"{opt.save_folder}/{iter_i}_yolov1.pk")
+            torch.save(model.state_dict(),
+                       f"{opt.save_folder}/{iter_i}_yolov1.pk")
+    torch.save(model.state_dict(), f"{opt.save_folder}/{iter_i}_yolov1.pk")
 
 
 if __name__ == "__main__":
