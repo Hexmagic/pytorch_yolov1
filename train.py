@@ -8,7 +8,7 @@ from torch.autograd import Variable
 from tqdm import tqdm
 
 from data.dataloader import make_train_dataloader, make_valid_dataloader
-from model.loss import YoloLoss
+from model.loss import yoloLoss
 from model.yolo import build_yolo
 from utils.lr_scheduler import make_lr_scheduler, make_optimizer
 import time
@@ -68,7 +68,7 @@ def train():
     else:
         model = build_yolo().cuda()
 
-    criterion = YoloLoss().cuda()
+    criterion = yoloLoss().cuda()
     optim = make_optimizer(model)
     lr_scheduler = make_lr_scheduler(optim)
     train_dataloader = make_train_dataloader(opt)
