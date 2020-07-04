@@ -2,12 +2,13 @@ from torch import nn
 from model.vgg import build_vgg
 import torch
 
+
 class YoLo(nn.Module):
     def __init__(self, features, num_classes=20):
         super(YoLo, self).__init__()
         self.features = features
         self.classify = nn.Sequential(nn.Linear(512 * 7 * 7, 4096),
-                                      nn.Dropout(), nn.LeakyReLU(inplace=True),
+                                      nn.LeakyReLU(inplace=True),
                                       nn.Linear(4096, 1470))
 
     def forward(self, x):

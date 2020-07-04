@@ -75,10 +75,9 @@ def decoder(pred):
     contain1 = pred[:, :, 4].unsqueeze(2)
     contain2 = pred[:, :, 9].unsqueeze(2)
     contain = torch.cat((contain1, contain2), 2)
-    mask1 = contain > 0.1  # 大于阈值
-    mask2 = (
-        contain == contain.max()
-    )  # we always select the best contain_prob what ever it>0.9
+    mask1 = contain > 0.5  # 大于阈值
+    mask2 = (contain == contain.max()
+             )  # we always select the best contain_prob what ever it>0.9
     mask = (mask1 + mask2).gt(0)
     # min_score,min_index = torch.min(contain,2) #每个cell只选最大概率的那个预测框
     for i in range(grid_num):
@@ -86,32 +85,31 @@ def decoder(pred):
             for b in range(2):
                 # index = min_index[i,j]
                 # mask[i,j,index] = 0
-                if mask[i, j, b] == 1:
+                if mask[i, j, b]:
                     # print(i,j,b)
-                    box = pred[i, j, b * 5 : b * 5 + 4]
+                    box = pred[i, j, b * 5:b * 5 + 4]
                     contain_prob = torch.FloatTensor([pred[i, j, b * 5 + 4]])
-                    xy = (
-                        torch.FloatTensor([j, i]) * cell_size
-                    )  # cell左上角  up left of cell
-                    box[:2] = box[:2] * cell_size + xy  # return cxcy relative to image
-                    box_xy = torch.FloatTensor(
-                        box.size()
-                    )  # 转换成xy形式    convert[cx,cy,w,h] to [x1,xy1,x2,y2]
+                    xy = (torch.FloatTensor([j, i]) * cell_size
+                          )  # cell左上角  up left of cell
+                    box[:
+                        2] = box[:2] * cell_size + xy  # return cxcy relative to image
+                    box_xy = torch.FloatTensor(box.size(
+                    ))  # 转换成xy形式    convert[cx,cy,w,h] to [x1,xy1,x2,y2]
                     box_xy[:2] = box[:2] - 0.5 * box[2:]
                     box_xy[2:] = box[:2] + 0.5 * box[2:]
                     max_prob, cls_index = torch.max(pred[i, j, 10:], 0)
-                    if float((contain_prob * max_prob)[0]) > 0.1:
-                        boxes.append(box_xy.view(1, 4))
-                        cls_indexs.append(cls_index)
-                        probs.append(contain_prob * max_prob)
+                    #if float((contain_prob * max_prob)[0]) > 0.1:
+                    boxes.append(box_xy.view(1, 4))
+                    cls_indexs.append(cls_index)
+                    probs.append(contain_prob * max_prob)
     if len(boxes) == 0:
         boxes = torch.zeros((1, 4))
         probs = torch.zeros(1)
         cls_indexs = torch.zeros(1)
     else:
-        boxes = torch.cat(boxes, 0)  # (n,4)
-        probs = torch.cat(probs, 0)  # (n,)
-        cls_indexs = torch.cat(cls_indexs, 0)  # (n,)
+        boxes = torch.cat(boxes)  # (n,4)
+        probs = torch.cat(probs)  # (n,)
+        cls_indexs = torch.cat(cls_indexs)  # (n,)
     keep = nms(boxes, probs)
     return boxes[keep], cls_indexs[keep], probs[keep]
 
@@ -166,11 +164,13 @@ def predict_gpu(model, image_name, root_path=""):
     mean = (123, 117, 104)  # RGB
     img = img - np.array(mean, dtype=np.float32)
 
-    transform = transforms.Compose([transforms.ToTensor(),])
+    transform = transforms.Compose([
+        transforms.ToTensor(),
+    ])
     img = transform(img)
-    img = Variable(img[None, :, :, :], volatile=True)
+    #img = Variable(img[None, :, :, :], volatile=True)
     img = img.cuda()
-
+    img = img.unsqueeze(0)
     pred = model(img)  # 1x7x7x30
     pred = pred.cpu()
     boxes, cls_indexs, probs = decoder(pred)
@@ -184,23 +184,25 @@ def predict_gpu(model, image_name, root_path=""):
         cls_index = int(cls_index)  # convert LongTensor to int
         prob = probs[i]
         prob = float(prob)
-        result.append([(x1, y1), (x2, y2), VOC_CLASSES[cls_index], image_name, prob])
+        result.append([(x1, y1), (x2, y2), VOC_CLASSES[cls_index], image_name,
+                       prob])
     return result
 
 
 if __name__ == "__main__":
     from argparse import ArgumentParser
-
+    from model.yolo import build_yolo
     parser = ArgumentParser()
-    parser.add_argument("--weights", type=str)
+    parser.add_argument("--weights", type=str,default='weights/26000_yolov1.pk')
     opt = parser.parse_args()
-    model = torch.load(opt.weights)
+    stat_dict = torch.load(opt.weights)
+    model = build_yolo().cuda()
+    model.load_state_dict(stat_dict)
     # model = resnet50()
     print("load model...")
     # model.load_state_dict(torch.load(opt.))
     model.eval()
-    model.cuda()
-    image_name = "sample/dog.jpg"
+    image_name = "D:/pytorch_yolov1/datasets/VOC2007/JPEGImages/2007_000068.jpg"
     image = cv2.imread(image_name)
     print("predicting...")
     result = predict_gpu(model, image_name)
@@ -208,7 +210,8 @@ if __name__ == "__main__":
         color = Color[VOC_CLASSES.index(class_name)]
         cv2.rectangle(image, left_up, right_bottom, color, 2)
         label = class_name + str(round(prob, 2))
-        text_size, baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.4, 1)
+        text_size, baseline = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX,
+                                              0.4, 1)
         p1 = (left_up[0], left_up[1] - text_size[1])
         cv2.rectangle(
             image,
@@ -227,6 +230,4 @@ if __name__ == "__main__":
             1,
             8,
         )
-
-    cv2.imwrite("result.jpg", image)
-
+        cv2.imwrite("result.jpg", image)

@@ -42,7 +42,9 @@ def train():
     torch.backends.cudnn.benchmark = True  # 加快训练
 
     if opt.pretrained_weights:
-        model = torch.load(opt.pretrained_weights)
+        model = build_yolo().cuda()
+        state_dict = torch.load(opt.pretrained_weights)
+        model.load_state_dict(state_dict)
     else:
         model = build_yolo().cuda()
 
