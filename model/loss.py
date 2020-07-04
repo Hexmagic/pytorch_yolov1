@@ -5,7 +5,7 @@ from torch.autograd import Variable
 
 
 class yoloLoss(nn.Module):
-    def __init__(self, S, B, l_coord, l_noobj):
+    def __init__(self, S=7, B=2, l_coord=5, l_noobj=0.5):
         super(yoloLoss, self).__init__()
         self.S = S
         self.B = B
