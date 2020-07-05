@@ -1,6 +1,11 @@
-import numpy as np
 import math
-from data.augmentions import ConvertColor, PhotometricDistort, Expand, RandomSampleCrop, RandomMirror, ToPercentCoords, Resize, SubtractMeans, ToTensor, Compose, ConvertFromInts
+
+import numpy as np
+
+from data.augmentions import (Compose, ConvertColor, ConvertFromInts, Expand,
+                              PhotometricDistort, RandomMirror,
+                              RandomSampleCrop, Resize, SubtractMeans,
+                              ToPercentCoords, ToTensor)
 
 
 def build_transfrom(split, img_size):
@@ -47,16 +52,16 @@ class TargetTransoform(object):
         np_class = np.zeros((len(boxes), self.class_nums))
         for i in range(len(labels)):
             np_class[i][labels[i]] = 1
-        step = 1 / self.cell_nums
+        step = 1.0 / self.cell_nums
         for i in range(len(boxes)):
             box = boxes[i]
             label = np_class[i]
             cx, cy, w, h = box
+            bx = int(cx//(step+1e-5))
+            by = int(cy//(step+1e-5))
             # 获取中心点所在的格子,3.5 实际是第四个格子，但是0为第一个，所以索引为3
-            bx = math.floor(cx / (step+1e-5))# 防止在边界上
-            by = math.floor(cy / (step+1e-5))
-            cx = cx % step / step
-            cy = cy % step / step
+            cx = (cx % step) / step
+            cy = (cy % step) / step
             box = [cx, cy, w, h]
             np_target[by][bx][:4] = box
             np_target[by][bx][4] = 1
