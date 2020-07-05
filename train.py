@@ -86,7 +86,7 @@ def train():
         loss.backward()
         optim.step()
         lr_scheduler.step()
-        if iter_i % 500 == 0:
+        if iter_i % 100 == 0:
             loss_map = cal_loss(recoder, iter_i)
             end = time.time()
             eta = round(end - start, 2)
