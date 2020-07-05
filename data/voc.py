@@ -63,7 +63,7 @@ class VOCDataset(torch.utils.data.Dataset):
             boxes = np.clip(boxes, 0.0, 1.0)
         if self.target_transform:
             image, targets = self.target_transform(image, boxes, labels)
-            return image, targets
+            return image, targets,image_id
         return image, boxes, labels
 
     def get_annotation(self, index):
