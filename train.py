@@ -49,10 +49,10 @@ def do_eval(model, val_loader, criterion):
 def train():
     parser = ArgumentParser()
     parser.add_argument("--batch_size", type=int, default=32)
-    parser.add_argument("--val_batch_size", type=int, default=1)
+    parser.add_argument("--val_batch_size", type=int, default=32)
     parser.add_argument("--max_iter", type=int, default=120000)
     parser.add_argument("--start_iter", type=int, default=3)
-    parser.add_argument("--n_cpu", type=int, default=1)
+    parser.add_argument("--n_cpu", type=int, default=8)
     parser.add_argument("--data_dir", type=str, default='datasets')
     parser.add_argument("--pretrained_weights", type=str, help="预训练模型")
     parser.add_argument("--save_folder", type=str, default="weights")
@@ -86,7 +86,7 @@ def train():
         loss.backward()
         optim.step()
         lr_scheduler.step()
-        if iter_i % 100 == 0:
+        if iter_i % 10 == 0:
             loss_map = cal_loss(recoder, iter_i)
             end = time.time()
             eta = round(end - start, 2)
