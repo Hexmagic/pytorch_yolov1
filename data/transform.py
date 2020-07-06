@@ -13,7 +13,6 @@ def build_transfrom(split, img_size):
         transform = [
             ConvertFromInts(),
             PhotometricDistort(),
-            Expand([123, 117, 104]),
             RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),

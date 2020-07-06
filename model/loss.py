@@ -15,54 +15,29 @@ class yoloLoss(Module):
         self.C = num_class
         self.step = 1.0 / 7
 
-    def conver_box(self, box, index):
-        i, j = index
-        box[:, 0], box[:, 1], box[:, 2], box[:, 3] = [
-            (box[:, 0] + i) * self.step - box[:, 2] / 2,
-            (box[:, 1] + j) * self.step - box[:, 3] / 2,
-            (box[:, 0] + i) * self.step + box[:, 2] / 2,
-            (box[:, 1] + j) * self.step + box[:, 3] / 2
-        ]
-        return box
-
     def compute_iou(self, box1, box2, index):
-        '''Compute the intersection over union of two set of boxes, each box is [x1,y1,x2,y2].
-        Args:
-          box1: (tensor) bounding boxes, sized [N,4].
-          box2: (tensor) bounding boxes, sized [M,4].
-        Return:
-          (tensor) iou, sized [N,M].
-        '''
+        box1 = torch.clone(box1)
+        box2 = torch.clone(box2)
         box1 = self.conver_box(box1, index)
         box2 = self.conver_box(box2, index)
-        N = box1.size(0)
-        M = box2.size(0)
+        x1, y1, w1, h1 = box1[:, 0], box1[:, 1], box1[:, 2], box1[:, 3]
+        x2, y2, w2, h2 = box2[:, 0], box2[:, 1], box2[:, 2], box2[:, 3]
+        # 获取相交
+        inter_w = (w1 + w2) - (torch.max(x1 + w1, x2 + w2) - torch.min(x1, x2))
+        inter_h = (h1 + h2) - (torch.max(y1 + h1, y2 + h2) - torch.min(y1, y2))
+        inter_h = torch.clamp(inter_h, 0)
+        inter_w = torch.clamp(inter_w, 0)
+        # 往下进行应该inter 和 union都是正值
+        inter = inter_w * inter_h
+        union = w1 * h1 + w2 * h2 - inter
+        return inter / union
 
-        lt = torch.max(
-            box1[:, :2].unsqueeze(1).expand(N, M,
-                                            2),  # [N,2] -> [N,1,2] -> [N,M,2]
-            box2[:, :2].unsqueeze(0).expand(N, M,
-                                            2),  # [M,2] -> [1,M,2] -> [N,M,2]
-        )
-
-        rb = torch.min(
-            box1[:, 2:].unsqueeze(1).expand(N, M,
-                                            2),  # [N,2] -> [N,1,2] -> [N,M,2]
-            box2[:, 2:].unsqueeze(0).expand(N, M,
-                                            2),  # [M,2] -> [1,M,2] -> [N,M,2]
-        )
-
-        wh = rb - lt  # [N,M,2]
-        wh[wh < 0] = 0  # clip at 0
-        inter = wh[:, :, 0] * wh[:, :, 1]  # [N,M]
-
-        area1 = (box1[:, 2] - box1[:, 0]) * (box1[:, 3] - box1[:, 1])  # [N,]
-        area2 = (box2[:, 2] - box2[:, 0]) * (box2[:, 3] - box2[:, 1])  # [M,]
-        area1 = area1.unsqueeze(1).expand_as(inter)  # [N,] -> [N,1] -> [N,M]
-        area2 = area2.unsqueeze(0).expand_as(inter)  # [M,] -> [1,M] -> [N,M]
-
-        iou = inter / (area1 + area2 - inter)
-        return iou
+    def conver_box(self, box, index):
+        i, j = index
+        box[:, 0], box[:, 1] = [(box[:, 0] + i) * self.step - box[:, 2] / 2,
+                                (box[:, 1] + j) * self.step - box[:, 3] / 2]
+        box = torch.clamp(box, 0)
+        return box
 
     def forward(self, pred, target):
         batch_size = pred.size(0)
@@ -78,7 +53,7 @@ class yoloLoss(Module):
         for img_i, y, x in zip(*index):
             img_i, y, x = img_i.item(), y.item(), x.item()
             pbox = pred_boxes[img_i, y, x]
-            target_box = target_boxes[img_i, y, x, 0:1]
+            target_box = target_boxes[img_i, y, x]
             ious = self.compute_iou(pbox[:, :4], target_box[:, :4], [x, y])
             iou, max_i = ious.max(0)
             pred_boxes[img_i, y, x, max_i, 4] = iou.item()
@@ -96,8 +71,8 @@ class yoloLoss(Module):
         xy_loss = F.mse_loss(pred_boxes[obj_mask][:, :2],
                              target_boxes[obj_mask][:, :2],
                              reduction="sum")
-        wh_loss = F.mse_loss(torch.sqrt(target_boxes[obj_mask][:,2:4]),
-                             torch.sqrt(pred_boxes[obj_mask][:,2:4]),
+        wh_loss = F.mse_loss(torch.sqrt(target_boxes[obj_mask][:, 2:4]),
+                             torch.sqrt(pred_boxes[obj_mask][:, 2:4]),
                              reduction="sum")
         class_loss = F.mse_loss(pred_cls[sig_mask],
                                 target_cls[sig_mask],

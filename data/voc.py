@@ -20,7 +20,7 @@ class VOCDataset(torch.utils.data.Dataset):
                  transform=None,
                  target_transform=None,
                  img_size=448,
-                 years=[2007],
+                 years=[2007, 2012],
                  keep_difficult=False):
         """Dataset for VOC data.
         Args:
@@ -63,7 +63,7 @@ class VOCDataset(torch.utils.data.Dataset):
             boxes = np.clip(boxes, 0.0, 1.0)
         if self.target_transform:
             image, targets = self.target_transform(image, boxes, labels)
-            return image, targets,image_id
+            return image, targets, image_id
         return image, boxes, labels
 
     def get_annotation(self, index):
@@ -71,7 +71,7 @@ class VOCDataset(torch.utils.data.Dataset):
         return image_id, self._get_annotation(image_id)
 
     def __len__(self):
-        return len(self.ids) if self.split=='train' else 800
+        return len(self.ids) if self.split == 'train' else 800
 
     @staticmethod
     def _read_image_ids(image_sets_files):
@@ -128,16 +128,4 @@ class VOCDataset(torch.utils.data.Dataset):
         image = Image.open(image_file).convert("RGB")
         image = np.array(image)
         return image
-
-    def collate_fn(self, batch):
-        imgs, targers, indexs = [], [], []
-        for img, target, index in zip(*batch):
-            if target['boxes']:
-                imgs.append(img)
-                targers.append(target)
-                indexs.append(index)
-
-        imgs = torch.stack(imgs)
-        targets = troch.stack(targets)
-        indexs = troch.stack(indexs)
-        return imgs, targets, indexs
+   
