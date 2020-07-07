@@ -36,7 +36,7 @@ def build_target_transform():
 
 
 class TargetTransoform(object):
-    def __init__(self, target_shape=(14, 14, 30), class_nums=20, cell_nums=14):
+    def __init__(self, target_shape=(7, 7, 30), class_nums=20, cell_nums=7):
         self.target_shape = target_shape
         self.class_nums = class_nums
         self.cell_nums = cell_nums

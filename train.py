@@ -31,7 +31,7 @@ def do_eval(model, val_loader, criterion):
     with torch.no_grad():
         recoder = {'reg_loss': 0, 'conf_loss': 0, 'cls_loss': 0}
         start = time.time()
-        for iter_i, (img, target,_) in enumerate(val_loader):
+        for iter_i, (img, target, _) in enumerate(val_loader):
             img, target = Variable(img).cuda(), Variable(target).cuda()
             output = model(img)
             loss_dict = criterion(output, target.float())
@@ -76,7 +76,8 @@ def train():
     model.train()
     start = time.time()
     recoder = {'reg_loss': 0, 'conf_loss': 0, 'cls_loss': 0}
-    for iter_i, (img, target, _) in enumerate(train_dataloader, opt.start_iter):
+    for iter_i, (img, target, _) in enumerate(train_dataloader,
+                                              opt.start_iter):
         img, target = Variable(img).cuda(), Variable(target).cuda()
         output = model(img)
         optim.zero_grad()
@@ -100,7 +101,7 @@ def train():
             model.eval()
             do_eval(model, val_dataloader, criterion)
             model.train()
-        if iter_i %5000==0:
+        if iter_i % 5000 == 0:
             torch.save(model.state_dict(),
                        f"{opt.save_folder}/{iter_i}_yolov1.pk")
     torch.save(model.state_dict(), f"{opt.save_folder}/{iter_i}_yolov1.pk")
