@@ -13,17 +13,18 @@ def build_transfrom(split, img_size):
         transform = [
             ConvertFromInts(),
             PhotometricDistort(),
-            RandomSampleCrop(),
+            #RandomSampleCrop(),
             RandomMirror(),
             ToPercentCoords(),
             Resize(img_size),
-            SubtractMeans([123, 117, 104]),
+            #SubtractMeans([123, 117, 104]),
             ToTensor(),
         ]
     else:
         transform = [
+            ConvertFromInts(),
             Resize(img_size),
-            SubtractMeans([123, 117, 104]),
+            #SubtractMeans([123, 117, 104]),
             ToPercentCoords(),
             ToTensor()
         ]
@@ -35,12 +36,12 @@ def build_target_transform():
 
 
 class TargetTransoform(object):
-    def __init__(self, target_shape=(7, 7, 30), class_nums=20, cell_nums=7):
+    def __init__(self, target_shape=(14, 14, 30), class_nums=20, cell_nums=14):
         self.target_shape = target_shape
         self.class_nums = class_nums
         self.cell_nums = cell_nums
 
-    def __call__(self, image, boxes,labels):
+    def __call__(self, image, boxes, labels):
         """
             labels = [1,2,3,4]
             boxes = [0.2 0.3 0.4 0.8]
@@ -56,8 +57,8 @@ class TargetTransoform(object):
             box = boxes[i]
             label = np_class[i]
             cx, cy, w, h = box
-            bx = int(cx//(step+1e-5))
-            by = int(cy//(step+1e-5))
+            bx = int(cx // (step + 1e-5))
+            by = int(cy // (step + 1e-5))
             # 获取中心点所在的格子,3.5 实际是第四个格子，但是0为第一个，所以索引为3
             cx = (cx % step) / step
             cy = (cy % step) / step

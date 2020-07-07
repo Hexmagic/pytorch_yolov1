@@ -13,7 +13,7 @@ class YoLo(nn.Module):
                                       nn.Linear(4096, 1470))
 
     def init_param(self):
-        for m in self.modules():
+        for m in self.classify():
             if isinstance(m, nn.Conv2d):
                 n = m.kernel_size[0] * m.kernel_size[1] * m.out_channels
                 m.weight.data.normal_(0, math.sqrt(2. / n))

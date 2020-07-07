@@ -71,7 +71,7 @@ class VOCDataset(torch.utils.data.Dataset):
         return image_id, self._get_annotation(image_id)
 
     def __len__(self):
-        return len(self.ids) if self.split == 'train' else 800
+        return len(self.ids)
 
     @staticmethod
     def _read_image_ids(image_sets_files):
@@ -128,4 +128,3 @@ class VOCDataset(torch.utils.data.Dataset):
         image = Image.open(image_file).convert("RGB")
         image = np.array(image)
         return image
-   

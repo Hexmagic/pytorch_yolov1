@@ -95,11 +95,12 @@ def train():
                 f"Iter {iter_i}:total loss {loss_map['total_loss']} reg_loss {loss_map['reg_loss']} conf loss {loss_map['conf_loss']} cls_loss {loss_map['cls_loss']} eta: {eta} mem:{mem}"
             )
             start = end
-        if iter_i % 5000 == 0:
+        if iter_i % 1000 == 0:
             print("eval model")
             model.eval()
             do_eval(model, val_dataloader, criterion)
             model.train()
+        if iter_i %5000==0:
             torch.save(model.state_dict(),
                        f"{opt.save_folder}/{iter_i}_yolov1.pk")
     torch.save(model.state_dict(), f"{opt.save_folder}/{iter_i}_yolov1.pk")
