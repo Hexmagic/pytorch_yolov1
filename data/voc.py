@@ -100,7 +100,9 @@ class VOCDataset(torch.utils.data.Dataset):
             y1 = float(bbox.find('ymin').text) - 1
             x2 = float(bbox.find('xmax').text) - 1
             y2 = float(bbox.find('ymax').text) - 1
-            boxes.append([x1, y1, x2, y2])
+            cx,cy = (x1+x2)/2,(y1+y2)/2
+            w,h = x2-x1,y2-y1
+            boxes.append([cx, cy, w, h])
             labels.append(self.class_dict[class_name])
             is_difficult_str = obj.find('difficult').text
             is_difficult.append(
